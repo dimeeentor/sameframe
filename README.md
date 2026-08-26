@@ -4,6 +4,8 @@ I built this mostly to understand how WebSockets actually work under the hood,
 and because my girlfriend and I use a similar service to watch YouTube together.
 I wanted to make our own version instead.
 
+![SyncTube UI](screenshots/ui.png)
+
 ## Privacy & Safety
 
 - **Your Mac is the server.** Video state (what's playing, current time, paused
