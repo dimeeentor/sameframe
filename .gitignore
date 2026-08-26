@@ -1,0 +1,21 @@
+# Build output — generated from TS (public/app.ts -> public/app.js)
+public/app.js
+dist/
+
+# Dependencies
+node_modules/
+
+# Deno cache
+.deno/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Env
+.env
+.env.local
+
+# Tunnel / temp
+*.lhr.*

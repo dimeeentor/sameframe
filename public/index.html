@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SyncTube</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div class="logo">SyncTube</div>
+        <div class="header-actions">
+          <div class="status">
+            <span id="conn" class="dot"></span>
+            <span id="connText">connecting</span>
+            <span id="clients">—</span>
+          </div>
+          <button id="shareBtn" class="pill"
+            title="Copy share link">Share</button>
+          <div class="menu-wrap">
+            <button id="menuBtn" class="pill icon" aria-label="Menu"
+              aria-expanded="false">Menu</button>
+            <div id="menuPanel" class="menu-panel hidden">
+              <button id="musicBtn" class="menu-item"
+                type="button">Music mode</button>
+              <button id="themeBtn" class="menu-item" type="button"
+                aria-label="Toggle theme">Theme</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="controls">
+        <input id="urlInput" type="text"
+          placeholder="Paste YouTube link, Enter to add to queue"
+          spellcheck="false" />
+        <button id="addBtn" class="secondary">Add to queue</button>
+        <button id="loadBtn">Play</button>
+      </div>
+
+      <div class="main">
+        <div class="video-col">
+          <div class="video-header">
+            <span id="videoLabel" class="video-label"></span>
+          </div>
+          <div class="player-wrap" id="playerWrap">
+            <div id="player"></div>
+            <div id="placeholder" class="placeholder">
+              <div class="placeholder-inner">
+                <span class="big">No video</span>
+                <p>Paste a YouTube URL above, try <code>dQw4w9WgXcQ</code></p>
+                <p
+                  class="sub">YouTube via nocookie, no tracking beyond YouTube</p>
+              </div>
+            </div>
+            <div id="cover" class="cover hidden">
+              <img id="coverImg" alt="cover" />
+              <div class="cover-meta">
+                <div id="coverTitle" class="cover-title"></div>
+                <div id="coverSub"
+                  class="cover-sub">Now playing, tap to show video</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="queue queue-col">
+          <div class="queue-head">
+            <h3>Queue <span id="qcount"></span></h3>
+            <div class="queue-actions">
+              <label class="toggle">
+                <input type="checkbox" id="loopChk" checked />
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Loop queue</span>
+              </label>
+              <button id="clearQ" class="pill small">Clear</button>
+            </div>
+          </div>
+          <ul id="queueList" class="queue-list"></ul>
+          <div id="emptyQ" class="empty">Queue empty, add links above.</div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+    window._ytSyncLogs = [];
+    window._ytLog = (...a) => {
+      console.log("[yt-sync]", ...a);
+      window._ytSyncLogs.push(a.join(" "));
+    };
+    window._ytLog("page load", location.href, "host", location.host);
+    window._ytReadySeen = false;
+    window.onYouTubeIframeAPIReady = () => {
+      window._ytReadySeen = true;
+      window._ytLog(
+        "YT API ready (inline stub), YT defined?",
+        typeof YT !== "undefined",
+      );
+      if (window._ytAppReady) window._ytAppReady();
+    };
+    window.addEventListener(
+      "error",
+      (e) => window._ytLog("window error", e.message, e.filename),
+    );
+    </script>
+    <script src="https://www.youtube.com/iframe_api"
+      onerror="window._ytLog('YT iframe_api load error')"
+      onload="window._ytLog('YT iframe_api script loaded')"></script>
+    <script src="/app.js" onerror="window._ytLog('app.js load error')"
+      onload="window._ytLog('app.js loaded')"></script>
+  </body>
+</html>
