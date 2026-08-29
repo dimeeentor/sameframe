@@ -470,10 +470,14 @@ body:not(.music) .cover {
   .main {
     flex-direction: column;
   }
+  .video-col,
   .queue-col {
     max-width: none;
     width: 100%;
     min-width: 0;
+  }
+  .player-wrap {
+    max-width: 100%;
   }
 }
 @media (max-width: 640px) {
