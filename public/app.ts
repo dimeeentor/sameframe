@@ -74,7 +74,7 @@ const clientsEl = $("#clients") as HTMLElement
 const videoLabel = $("#videoLabel") as HTMLElement
 const musicBtn = $("#musicBtn") as HTMLButtonElement
 const themeBtn = $("#themeBtn") as HTMLButtonElement
-const shareBtn = $("#shareBtn") as HTMLButtonElement
+const copyLinkBtn = $("#copyLinkBtn") as HTMLButtonElement
 const queueList = $("#queueList") as HTMLElement
 const qcount = $("#qcount") as HTMLElement
 const emptyQ = $("#emptyQ") as HTMLElement
@@ -910,12 +910,12 @@ function getShareUrl(): string {
   return location.href
 }
 
-shareBtn.addEventListener("click", async () => {
+copyLinkBtn.addEventListener("click", async () => {
   const url = getShareUrl()
   try {
     await navigator.clipboard.writeText(url)
-    shareBtn.textContent = "✓ Copied"
-    setTimeout(() => (shareBtn.textContent = "↗ Share"), 1500)
+    copyLinkBtn.textContent = "✓ Copied"
+    setTimeout(() => (copyLinkBtn.textContent = "↗ Share"), 1500)
   } catch {
     prompt("Copy link:", url)
   }
