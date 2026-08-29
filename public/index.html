@@ -18,25 +18,42 @@
             <span id="connText">connecting</span>
             <span id="clients">—</span>
           </div>
-          <button id="shareBtn" class="pill"
-            title="Copy share link">Share</button>
+          <button id="shareBtn" class="pill" title="Copy share link">
+            Share
+          </button>
           <div class="menu-wrap">
-            <button id="menuBtn" class="pill icon" aria-label="Menu"
-              aria-expanded="false">Menu</button>
+            <button
+              id="menuBtn"
+              class="pill icon"
+              aria-label="Menu"
+              aria-expanded="false"
+            >
+              Menu
+            </button>
             <div id="menuPanel" class="menu-panel hidden">
-              <button id="musicBtn" class="menu-item"
-                type="button">Music mode</button>
-              <button id="themeBtn" class="menu-item" type="button"
-                aria-label="Toggle theme">Theme</button>
+              <button id="musicBtn" class="menu-item" type="button">
+                Music mode
+              </button>
+              <button
+                id="themeBtn"
+                class="menu-item"
+                type="button"
+                aria-label="Toggle theme"
+              >
+                Theme
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       <div class="controls">
-        <input id="urlInput" type="text"
+        <input
+          id="urlInput"
+          type="text"
           placeholder="Paste YouTube link, Enter to add to queue"
-          spellcheck="false" />
+          spellcheck="false"
+        />
         <button id="addBtn" class="secondary">Add to queue</button>
         <button id="loadBtn">Play</button>
       </div>
@@ -57,8 +74,9 @@
               <img id="coverImg" alt="cover" />
               <div class="cover-meta">
                 <div id="coverTitle" class="cover-title"></div>
-                <div id="coverSub"
-                  class="cover-sub">Now playing, tap to show video</div>
+                <div id="coverSub" class="cover-sub">
+                  Now playing, tap to show video
+                </div>
               </div>
             </div>
           </div>
@@ -82,10 +100,21 @@
       </div>
 
       <div class="shortcuts-wrap">
-        <button id="shortcutsBtn" class="shortcuts-btn" type="button"
-          aria-label="Show keyboard shortcuts" aria-expanded="false">?</button>
-        <div id="shortcutsPanel" class="shortcuts-panel hidden" role="dialog"
-          aria-label="Keyboard shortcuts">
+        <button
+          id="shortcutsBtn"
+          class="shortcuts-btn"
+          type="button"
+          aria-label="Show keyboard shortcuts"
+          aria-expanded="false"
+        >
+          ?
+        </button>
+        <div
+          id="shortcutsPanel"
+          class="shortcuts-panel hidden"
+          role="dialog"
+          aria-label="Keyboard shortcuts"
+        >
           <div class="shortcuts-title">Keyboard shortcuts</div>
           <div><kbd>/</kbd><span>Focus link field</span></div>
           <div><kbd>Esc</kbd><span>Leave link field</span></div>
@@ -97,30 +126,34 @@
     </div>
 
     <script>
-    window._ytSyncLogs = [];
-    window._ytLog = (...a) => {
-      console.log("[sameframe]", ...a);
-      window._ytSyncLogs.push(a.join(" "));
-    };
-    window._ytLog("page load", location.href, "host", location.host);
-    window._ytReadySeen = false;
-    window.onYouTubeIframeAPIReady = () => {
-      window._ytReadySeen = true;
-      window._ytLog(
-        "YT API ready (inline stub), YT defined?",
-        typeof YT !== "undefined",
-      );
-      if (window._ytAppReady) window._ytAppReady();
-    };
-    window.addEventListener(
-      "error",
-      (e) => window._ytLog("window error", e.message, e.filename),
-    );
+      window._ytSyncLogs = []
+      window._ytLog = (...a) => {
+        console.log("[sameframe]", ...a)
+        window._ytSyncLogs.push(a.join(" "))
+      }
+      window._ytLog("page load", location.href, "host", location.host)
+      window._ytReadySeen = false
+      window.onYouTubeIframeAPIReady = () => {
+        window._ytReadySeen = true
+        window._ytLog(
+          "YT API ready (inline stub), YT defined?",
+          typeof YT !== "undefined",
+        )
+        if (window._ytAppReady) window._ytAppReady()
+      }
+      window.addEventListener("error", (e) =>
+        window._ytLog("window error", e.message, e.filename),
+      )
     </script>
-    <script src="https://www.youtube.com/iframe_api"
+    <script
+      src="https://www.youtube.com/iframe_api"
       onerror="window._ytLog('YT iframe_api load error')"
-      onload="window._ytLog('YT iframe_api script loaded')"></script>
-    <script src="/app.js" onerror="window._ytLog('app.js load error')"
-      onload="window._ytLog('app.js loaded')"></script>
+      onload="window._ytLog('YT iframe_api script loaded')"
+    ></script>
+    <script
+      src="/app.js"
+      onerror="window._ytLog('app.js load error')"
+      onload="window._ytLog('app.js loaded')"
+    ></script>
   </body>
 </html>
