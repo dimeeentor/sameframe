@@ -337,6 +337,29 @@ Deno.serve({ port: PORT, hostname: "0.0.0.0" }, async (req: Request) => {
             }
             break;
           }
+          case "queue_reorder": {
+            const from = msg.from;
+            const to = msg.to;
+            if (
+              Number.isInteger(from) &&
+              Number.isInteger(to) &&
+              from >= 0 && from < state.queue.length &&
+              to >= 0 && to < state.queue.length &&
+              from !== to
+            ) {
+              const [videoId] = state.queue.splice(from, 1);
+              state.queue.splice(to, 0, videoId);
+              state.queueIndex = state.videoId
+                ? state.queue.indexOf(state.videoId)
+                : -1;
+              broadcast({
+                type: "queue",
+                queue: state.queue,
+                queueIndex: state.queueIndex,
+              });
+            }
+            break;
+          }
           case "queue_clear": {
             state.queue = [];
             state.queueIndex = -1;

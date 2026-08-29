@@ -81,6 +81,8 @@ const emptyQ = $("#emptyQ") as HTMLElement;
 const cover = $("#cover") as HTMLElement;
 const coverImg = $("#coverImg") as HTMLImageElement;
 const coverTitle = $("#coverTitle") as HTMLElement;
+const shortcutsBtn = $("#shortcutsBtn") as HTMLButtonElement;
+const shortcutsPanel = $("#shortcutsPanel") as HTMLElement;
 
 let player: YTPlayer | null = null;
 let playerReady = false;
@@ -162,6 +164,21 @@ document.addEventListener("click", (e) => {
   ) {
     menuPanel.classList.add("hidden");
     menuBtn.setAttribute("aria-expanded", "false");
+  }
+});
+
+shortcutsBtn.addEventListener("click", () => {
+  const isHidden = shortcutsPanel.classList.contains("hidden");
+  shortcutsPanel.classList.toggle("hidden", !isHidden);
+  shortcutsBtn.setAttribute("aria-expanded", String(isHidden));
+});
+document.addEventListener("click", (e) => {
+  if (
+    !shortcutsBtn.contains(e.target as Node) &&
+    !shortcutsPanel.contains(e.target as Node)
+  ) {
+    shortcutsPanel.classList.add("hidden");
+    shortcutsBtn.setAttribute("aria-expanded", "false");
   }
 });
 
@@ -311,11 +328,14 @@ setTimeout(() => {
       console.warn("[sameframe] YT undefined — retry loading iframe_api");
       const s = document.createElement("script");
       s.src = "https://www.youtube.com/iframe_api";
-      s.onerror = () => console.error("[sameframe] retry iframe_api load error");
+      s.onerror = () =>
+        console.error("[sameframe] retry iframe_api load error");
       s.onload = () => console.log("[sameframe] retry iframe_api loaded");
       document.head.appendChild(s);
     } else if (!player) {
-      console.warn("[sameframe] YT defined but player null — retry createPlayer");
+      console.warn(
+        "[sameframe] YT defined but player null — retry createPlayer",
+      );
       createPlayer();
     }
   }
@@ -654,6 +674,15 @@ function applySeek(t: number): void {
   }
 }
 
+function moveQueueItem(from: number, to: number): void {
+  const [videoId] = queue.splice(from, 1);
+  if (!videoId) return;
+  queue.splice(to, 0, videoId);
+  queueIndex = currentVideoId ? queue.indexOf(currentVideoId) : -1;
+  renderQueue();
+  send({ type: "queue_reorder", from, to });
+}
+
 function renderQueue(): void {
   qcount.textContent = queue.length ? `(${queue.length})` : "";
   queueList.innerHTML = "";
@@ -676,13 +705,14 @@ function renderQueue(): void {
         }
       });
     }
-    li.innerHTML = `<img class="qthumb" src="${
-      thumb(id)
-    }" loading="lazy"/><div class="qtitle">${
-      title ?? id
-    }</div><button class="qdel" title="remove">Remove</button>`;
+    li.innerHTML =
+      `<button class="drag-handle" type="button" title="Drag to reorder" aria-label="Drag to reorder">⠿</button><img class="qthumb" src="${
+        thumb(id)
+      }" loading="lazy"/><div class="qtitle">${
+        title ?? id
+      }</div><button class="qdel" title="remove">Remove</button>`;
     li.addEventListener("click", (e) => {
-      if ((e.target as HTMLElement).closest(".qdel")) return;
+      if ((e.target as HTMLElement).closest(".qdel, .drag-handle")) return;
       queueIndex = i;
       currentVideoId = id;
       if (document.body.classList.contains("music")) setMusicMode(false);
@@ -699,6 +729,41 @@ function renderQueue(): void {
         renderQueue();
       },
     );
+    const handle = li.querySelector(".drag-handle") as HTMLButtonElement;
+    handle.addEventListener("pointerdown", (e: PointerEvent) => {
+      e.preventDefault();
+      let targetIndex = i;
+      li.classList.add("dragging");
+      handle.setPointerCapture(e.pointerId);
+      const updateTarget = (move: PointerEvent) => {
+        const row = document.elementFromPoint(move.clientX, move.clientY)
+          ?.closest("li");
+        const rows = Array.from(queueList.children);
+        const nextIndex = rows.indexOf(row as Element);
+        if (nextIndex >= 0) {
+          targetIndex = nextIndex;
+          rows.forEach((item, index) =>
+            item.classList.toggle(
+              "drag-over",
+              index === targetIndex && index !== i,
+            )
+          );
+        }
+      };
+      const finish = () => {
+        li.classList.remove("dragging");
+        Array.from(queueList.children).forEach((item) =>
+          item.classList.remove("drag-over")
+        );
+        if (targetIndex !== i) moveQueueItem(i, targetIndex);
+        handle.removeEventListener("pointermove", updateTarget);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", finish);
+      };
+      handle.addEventListener("pointermove", updateTarget);
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", finish);
+    });
     queueList.appendChild(li);
   });
 }
@@ -750,6 +815,59 @@ loadBtn.addEventListener("click", doPlayNow);
 addBtn.addEventListener("click", doQueue);
 urlInput.addEventListener("keydown", (e: KeyboardEvent) => {
   if (e.key === "Enter") doQueue();
+});
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable);
+}
+
+function seekBy(seconds: number): void {
+  if (!player || !playerReady || !currentVideoId) return;
+  const target = Math.max(0, player.getCurrentTime() + seconds);
+  suppress(800);
+  try {
+    player.seekTo(target, true);
+    send({ type: "seek", currentTime: target });
+  } catch {
+  }
+}
+
+function togglePlayback(): void {
+  if (!player || !playerReady || !currentVideoId) return;
+  const time = player.getCurrentTime();
+  suppress(800);
+  try {
+    if (isPlaying) {
+      player.pauseVideo();
+      isPlaying = false;
+      send({ type: "pause", currentTime: time });
+    } else {
+      player.playVideo();
+      isPlaying = true;
+      send({ type: "play", currentTime: time });
+    }
+  } catch {
+  }
+}
+
+document.addEventListener("keydown", (e: KeyboardEvent) => {
+  if (isTypingTarget(e.target)) return;
+  if (e.key === "/") {
+    e.preventDefault();
+    urlInput.focus();
+  } else if (e.key === " ") {
+    e.preventDefault();
+    togglePlayback();
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    seekBy(-5);
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    seekBy(5);
+  }
 });
 
 ($("#clearQ") as HTMLButtonElement).addEventListener(

@@ -81,6 +81,18 @@
           <div id="emptyQ" class="empty">No videos in the queue yet.</div>
         </section>
       </div>
+
+      <div class="shortcuts-wrap">
+        <button id="shortcutsBtn" class="shortcuts-btn" type="button"
+          aria-label="Show keyboard shortcuts" aria-expanded="false">?</button>
+        <div id="shortcutsPanel" class="shortcuts-panel hidden" role="dialog"
+          aria-label="Keyboard shortcuts">
+          <div class="shortcuts-title">Keyboard shortcuts</div>
+          <div><kbd>/</kbd><span>Focus link field</span></div>
+          <div><kbd>Space</kbd><span>Play / pause</span></div>
+          <div><kbd>←</kbd><kbd>→</kbd><span>Seek 5 seconds</span></div>
+        </div>
+      </div>
     </div>
 
     <script>
