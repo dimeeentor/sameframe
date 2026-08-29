@@ -515,8 +515,8 @@ Deno.serve({ port: PORT, hostname: "0.0.0.0" }, async (req: Request) => {
   if (url.pathname === "/style.css") {
     return await serveFile("public/style.css", "text/css");
   }
-  if (url.pathname === "/favicon.ico") {
-    return new Response(null, { status: 204 });
+  if (url.pathname === "/icon.png") {
+    return await serveFile("public/icon.png", "image/png");
   }
   return new Response("Not found", { status: 404 });
 });
