@@ -469,12 +469,13 @@ body:not(.music) .cover {
   background: var(--bg);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 800px) {
   .main {
     flex-direction: column;
   }
   .video-col,
   .queue-col {
+    flex: none;
     max-width: none;
     width: 100%;
     min-width: 0;
