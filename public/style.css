@@ -305,6 +305,10 @@ button:active {
     aspect-ratio 0.25s,
     height 0.25s;
 }
+.player-wrap:fullscreen {
+  border: 0;
+  border-radius: 0;
+}
 #player {
   position: absolute;
   z-index: 1;
@@ -352,12 +356,8 @@ button:active {
 .placeholder-inner {
   position: relative;
   z-index: 1;
-  max-width: 390px;
-  padding: 30px;
-  text-align: center;
 }
 .big {
-  display: block;
   font-family: ui-serif, Georgia, serif;
   font-size: clamp(28px, 3.3vw, 42px);
   font-weight: 600;

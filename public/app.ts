@@ -81,6 +81,7 @@ const emptyQ = $("#emptyQ") as HTMLElement;
 const cover = $("#cover") as HTMLElement;
 const coverImg = $("#coverImg") as HTMLImageElement;
 const coverTitle = $("#coverTitle") as HTMLElement;
+const playerWrap = $("#playerWrap") as HTMLElement;
 const shortcutsBtn = $("#shortcutsBtn") as HTMLButtonElement;
 const shortcutsPanel = $("#shortcutsPanel") as HTMLElement;
 
@@ -815,6 +816,7 @@ loadBtn.addEventListener("click", doPlayNow);
 addBtn.addEventListener("click", doQueue);
 urlInput.addEventListener("keydown", (e: KeyboardEvent) => {
   if (e.key === "Enter") doQueue();
+  if (e.key === "Escape") urlInput.blur();
 });
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -853,6 +855,16 @@ function togglePlayback(): void {
   }
 }
 
+function toggleFullscreen(): void {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else {
+    const frame = document.querySelector("#player iframe") as
+      | HTMLIFrameElement
+      | null;
+    (frame ?? playerWrap).requestFullscreen().catch(() => {});
+  }
+}
+
 document.addEventListener("keydown", (e: KeyboardEvent) => {
   if (isTypingTarget(e.target)) return;
   if (e.key === "/") {
@@ -867,6 +879,9 @@ document.addEventListener("keydown", (e: KeyboardEvent) => {
   } else if (e.key === "ArrowRight") {
     e.preventDefault();
     seekBy(5);
+  } else if (e.key.toLowerCase() === "f") {
+    e.preventDefault();
+    toggleFullscreen();
   }
 });
 
@@ -917,12 +932,6 @@ shareBtn.addEventListener("click", async () => {
   }
   console.log("share url:", url, publicUrl ? "(public)" : "(local)");
 });
-
-const initial = new URLSearchParams(location.search).get("v");
-if (initial) {
-  const id = extractVideoId(initial);
-  if (id) urlInput.value = id;
-}
 
 connect();
 (window as unknown as Record<string, unknown>)._ytSync = {
