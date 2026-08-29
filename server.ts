@@ -456,7 +456,7 @@ Deno.serve({ port: PORT, hostname: "0.0.0.0" }, async (req: Request) => {
     try {
       const r = await fetch(
         `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`,
-        { headers: { "User-Agent": "SyncTube/1.0" } },
+        { headers: { "User-Agent": "Sameframe/1.0" } },
       );
       if (!r.ok) {
         return new Response(JSON.stringify({ id, title: id }), {
@@ -499,7 +499,7 @@ Deno.serve({ port: PORT, hostname: "0.0.0.0" }, async (req: Request) => {
 });
 
 const localIP = getLocalIP();
-console.log(`\nyoutube-sync running`);
+console.log(`\nSameframe running`);
 console.log(`  local:   http://localhost:${PORT}`);
 if (localIP) {
   console.log(`  network: http://${localIP}:${PORT}  ← share on same Wi-Fi`);

@@ -217,7 +217,7 @@ let ytInitAttempts = 0;
 function createPlayer(): void {
   ytInitAttempts++;
   console.log(
-    "[yt-sync] createPlayer attempt",
+    "[sameframe] createPlayer attempt",
     ytInitAttempts,
     "YT?",
     typeof YT,
@@ -239,14 +239,14 @@ function createPlayer(): void {
       events: {
         onReady: () => {
           playerReady = true;
-          console.log("[yt-sync] YT ready (onReady) playerReady=true");
+          console.log("[sameframe] YT ready (onReady) playerReady=true");
           if (ws && ws.readyState === 1) {
             ws.send(JSON.stringify({ type: "sync_request" }));
           }
         },
         onError: (e: { data: number }) => {
           console.error(
-            "[yt-sync] YT player error",
+            "[sameframe] YT player error",
             e.data,
             "https://developers.google.com/youtube/iframe_api_reference#onError",
           );
@@ -273,12 +273,12 @@ function createPlayer(): void {
       },
     });
   } catch (err) {
-    console.error("[yt-sync] createPlayer failed", err);
+    console.error("[sameframe] createPlayer failed", err);
   }
 }
 
 function onYouTubeIframeAPIReady(): void {
-  console.log("[yt-sync] onYouTubeIframeAPIReady called, YT?", typeof YT);
+  console.log("[sameframe] onYouTubeIframeAPIReady called, YT?", typeof YT);
   createPlayer();
 }
 
@@ -289,7 +289,7 @@ const w = window as unknown as Record<string, unknown> & {
 w._ytAppReady = onYouTubeIframeAPIReady;
 if (w._ytReadySeen) {
   console.log(
-    "[yt-sync] YT was already ready (stub seen), creating player now",
+    "[sameframe] YT was already ready (stub seen), creating player now",
   );
   onYouTubeIframeAPIReady();
 } else {
@@ -299,7 +299,7 @@ if (w._ytReadySeen) {
 setTimeout(() => {
   if (!playerReady) {
     console.warn(
-      "[yt-sync] YT not ready after 4s — YT?",
+      "[sameframe] YT not ready after 4s — YT?",
       typeof YT,
       "YT.Player?",
       typeof (window as unknown as { YT?: unknown }).YT,
@@ -308,14 +308,14 @@ setTimeout(() => {
     );
 
     if (typeof YT === "undefined") {
-      console.warn("[yt-sync] YT undefined — retry loading iframe_api");
+      console.warn("[sameframe] YT undefined — retry loading iframe_api");
       const s = document.createElement("script");
       s.src = "https://www.youtube.com/iframe_api";
-      s.onerror = () => console.error("[yt-sync] retry iframe_api load error");
-      s.onload = () => console.log("[yt-sync] retry iframe_api loaded");
+      s.onerror = () => console.error("[sameframe] retry iframe_api load error");
+      s.onload = () => console.log("[sameframe] retry iframe_api loaded");
       document.head.appendChild(s);
     } else if (!player) {
-      console.warn("[yt-sync] YT defined but player null — retry createPlayer");
+      console.warn("[sameframe] YT defined but player null — retry createPlayer");
       createPlayer();
     }
   }
@@ -323,7 +323,7 @@ setTimeout(() => {
 setInterval(() => {
   if (!playerReady) {
     console.log(
-      "[yt-sync] still not ready — playerReady false, YT?",
+      "[sameframe] still not ready — playerReady false, YT?",
       typeof YT,
     );
   }
@@ -355,7 +355,7 @@ function connect(): void {
   try {
     ws = new WebSocket(`${proto}//${location.host}/ws`);
   } catch (err) {
-    console.warn("[yt-sync] WS construct failed", err);
+    console.warn("[sameframe] WS construct failed", err);
     wsFailed = true;
     startPolling();
     return;
@@ -366,12 +366,12 @@ function connect(): void {
     wsFailed = false;
     stopPolling();
     ws!.send(JSON.stringify({ type: "sync_request" }));
-    console.log("[yt-sync] WS connected", location.host);
+    console.log("[sameframe] WS connected", location.host);
   };
   ws.onclose = () => {
     connDot.className = "dot off";
     connText.textContent = "disconnected — retrying…";
-    console.warn("[yt-sync] WS closed");
+    console.warn("[sameframe] WS closed");
     wsFailed = true;
     startPolling();
     setTimeout(connect, 1500);
@@ -379,7 +379,7 @@ function connect(): void {
   ws.onerror = (e) => {
     connDot.className = "dot off";
     connText.textContent = "WS error — polling";
-    console.warn("[yt-sync] WS error", e);
+    console.warn("[sameframe] WS error", e);
     wsFailed = true;
     startPolling();
   };
@@ -405,7 +405,7 @@ async function pollSync(): Promise<void> {
     const data = (await r.json()) as ServerMsg & Record<string, unknown>;
 
     if (data.videoId && data.videoId !== currentVideoId) {
-      console.log("[yt-sync] poll sync -> load", data.videoId);
+      console.log("[sameframe] poll sync -> load", data.videoId);
       handleServer(data);
     } else if (data.videoId) {
       handleServer(data);
@@ -419,7 +419,7 @@ async function pollSync(): Promise<void> {
 function startPolling(): void {
   if (pollTimer !== null) return;
   console.log(
-    "[yt-sync] starting HTTP polling fallback (WS blocked on tunnel)",
+    "[sameframe] starting HTTP polling fallback (WS blocked on tunnel)",
   );
   pollTimer = window.setInterval(pollSync, 2000);
   pollSync();
@@ -526,7 +526,7 @@ function ensureReady(cb: () => void): void {
   if (playerReady && player) cb();
   else {
     console.log(
-      "[yt-sync] ensureReady waiting — playerReady",
+      "[sameframe] ensureReady waiting — playerReady",
       playerReady,
       "player",
       !!player,
@@ -543,13 +543,13 @@ function applyLoad(videoId: string, time: number, shouldPlay: boolean): void {
     (queueIndex >= 0 ? `  •  ${queueIndex + 1}/${queue.length}` : "");
   videoLabel.textContent = label;
   const pageTitle = cached ?? videoId;
-  document.title = `${pageTitle} - SyncTube`;
+  document.title = `${pageTitle} - Sameframe`;
   if (!cached) {
     fetchTitle(videoId).then((t) => {
       if (currentVideoId === videoId) {
         videoLabel.textContent = t +
           (queueIndex >= 0 ? `  •  ${queueIndex + 1}/${queue.length}` : "");
-        document.title = `${t} - SyncTube`;
+        document.title = `${t} - Sameframe`;
         updateCover();
         renderQueue();
       }
@@ -558,7 +558,7 @@ function applyLoad(videoId: string, time: number, shouldPlay: boolean): void {
   renderQueue();
   updateCover();
   console.log(
-    "[yt-sync] applyLoad",
+    "[sameframe] applyLoad",
     videoId,
     "ready:",
     playerReady,
@@ -566,12 +566,12 @@ function applyLoad(videoId: string, time: number, shouldPlay: boolean): void {
     document.body.classList.contains("music"),
   );
   ensureReady(() => {
-    console.log("[yt-sync] loadVideoById", videoId, time);
+    console.log("[sameframe] loadVideoById", videoId, time);
     suppress(1500);
     try {
       player!.loadVideoById({ videoId, startSeconds: time });
     } catch (err) {
-      console.error("[yt-sync] loadVideoById failed", err);
+      console.error("[sameframe] loadVideoById failed", err);
       setTimeout(() => {
         try {
           player!.loadVideoById({ videoId, startSeconds: time });
@@ -725,7 +725,7 @@ function doQueue(): void {
   }
   const wasEmpty = queue.length === 0 && !currentVideoId;
   console.log(
-    "[yt-sync] doQueue",
+    "[sameframe] doQueue",
     id,
     "wasEmpty",
     wasEmpty,
@@ -739,7 +739,7 @@ function doQueue(): void {
   }
 
   if (wasEmpty) {
-    console.log("[yt-sync] queue was empty -> auto load");
+    console.log("[sameframe] queue was empty -> auto load");
     if (document.body.classList.contains("music")) {
     }
     applyLoad(id, 0, true);

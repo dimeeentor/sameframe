@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SyncTube</title>
+    <title>Sameframe</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <div class="app">
       <header>
-        <div class="logo">SyncTube</div>
+        <div class="logo">Sameframe</div>
         <div class="header-actions">
           <div class="status">
             <span id="conn" class="dot"></span>
@@ -48,8 +48,8 @@
             <div id="player"></div>
             <div id="placeholder" class="placeholder">
               <div class="placeholder-inner">
-                <span class="big">No video</span>
-                <p>Paste a YouTube URL above, try <code>dQw4w9WgXcQ</code></p>
+                <span class="big">Nothing playing yet</span>
+                <p>Paste a YouTube link above, try <code>dQw4w9WgXcQ</code></p>
                 <p
                   class="sub">YouTube via nocookie, no tracking beyond YouTube</p>
               </div>
@@ -78,7 +78,7 @@
             </div>
           </div>
           <ul id="queueList" class="queue-list"></ul>
-          <div id="emptyQ" class="empty">Queue empty, add links above.</div>
+          <div id="emptyQ" class="empty">No videos in the queue yet.</div>
         </section>
       </div>
     </div>
@@ -86,7 +86,7 @@
     <script>
     window._ytSyncLogs = [];
     window._ytLog = (...a) => {
-      console.log("[yt-sync]", ...a);
+      console.log("[sameframe]", ...a);
       window._ytSyncLogs.push(a.join(" "));
     };
     window._ytLog("page load", location.href, "host", location.host);

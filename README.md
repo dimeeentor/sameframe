@@ -1,10 +1,8 @@
-# SyncTube: watch YouTube together
+# Sameframe: watch YouTube together
 
 I built this mostly to understand how WebSockets actually work under the hood,
 and because my girlfriend and I use a similar service to watch YouTube together.
 I wanted to make our own version instead.
-
-![SyncTube UI](screenshots/ui.png)
 
 ## Privacy & Safety
 
@@ -25,7 +23,7 @@ I wanted to make our own version instead.
 Install Deno first if you don't have it: https://deno.land
 
 ```bash
-cd youtube-sync
+cd <your-clone>
 deno task build   # compiles the TS client to JS
 deno task dev      # runs at http://localhost:8000, or http://<your-ip>:8000 on the same Wi-Fi
 deno task share   # also gives you a public link for people outside your Wi-Fi
