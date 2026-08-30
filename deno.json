@@ -1,13 +1,16 @@
 {
+  "imports": {
+    "hono": "npm:hono@^4"
+  },
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "deno.ns", "deno.window", "esnext"],
     "strict": true
   },
   "tasks": {
-    "dev": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys server.ts",
-    "start": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-sys server.ts",
-    "share": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys server.ts --public",
+    "dev": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys api/server.ts",
+    "start": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-sys api/server.ts",
+    "share": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys api/server.ts --public",
     "build": "deno run --allow-read --allow-write --allow-net --allow-env build.ts",
-    "check": "deno check public/app.ts server.ts"
+    "check": "deno check public/app.ts api/server.ts"
   }
 }
