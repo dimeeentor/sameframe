@@ -24,7 +24,8 @@ Install Deno first if you don't have it: https://deno.land
 
 ```bash
 cd <your-clone>
-deno task build   # compiles the TS client to JS
+deno task install:fe # installs the frontend's npm deps (first run only)
+deno task build   # builds the Svelte frontend into frontend/dist
 deno task dev      # runs at http://localhost:8000, or http://<your-ip>:8000 on the same Wi-Fi
 deno task share   # also gives you a public link for people outside your Wi-Fi
 deno task check   # type-checks everything
@@ -58,9 +59,11 @@ auto-advances when a video ends, looping back around when it runs out.
 
 ## Stack
 
-Deno on the backend with native WebSockets, TypeScript on the client. No
-bundler, no node_modules at runtime. About as lightweight as this kind of thing
-gets.
+Deno + Hono on the backend with native WebSockets; Svelte 5 (Vite build, run
+through Deno) in `frontend/`, served as static assets from `frontend/dist`. No
+node_modules at runtime — only at frontend build time. About as lightweight as
+this kind of thing gets. The frontend's design notes live in
+[frontend/DESIGN.md](frontend/DESIGN.md).
 
 ## License
 

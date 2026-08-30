@@ -1,5 +1,4 @@
-# Build output — generated from TS (public/app.ts -> public/app.js)
-public/app.js
+# Build output — Svelte frontend (frontend/ -> frontend/dist)
 dist/
 
 # Dependencies

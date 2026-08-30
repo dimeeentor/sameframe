@@ -7,18 +7,17 @@ import { getLocalIP, startPublicTunnel } from "./tunnel.ts"
 
 // serveStatic resolves paths against the process cwd, but the old server was
 // module-relative — anchor to this file so the server works from any directory.
-const PUBLIC_ROOT = new URL("../public", import.meta.url).pathname
+// Assets come from the Svelte build (frontend/dist, produced by `deno task build:fe`).
+const DIST_ROOT = new URL("../frontend/dist", import.meta.url).pathname
 
 const app = new Hono()
 
 app.route("/", ws)
 app.route("/api", api)
 
-app.get("/", serveStatic({ root: PUBLIC_ROOT, path: "index.html" }))
-app.get("/index.html", serveStatic({ root: PUBLIC_ROOT, path: "index.html" }))
-app.get("/app.js", serveStatic({ root: PUBLIC_ROOT, path: "app.js" }))
-app.get("/style.css", serveStatic({ root: PUBLIC_ROOT, path: "style.css" }))
-app.get("/icon.png", serveStatic({ root: PUBLIC_ROOT, path: "icon.png" }))
+app.get("/", serveStatic({ root: DIST_ROOT, path: "index.html" }))
+app.get("/index.html", serveStatic({ root: DIST_ROOT, path: "index.html" }))
+app.use("*", serveStatic({ root: DIST_ROOT }))
 
 app.notFound((c) => c.text("Not found", 404))
 
