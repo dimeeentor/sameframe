@@ -18,10 +18,19 @@
 
   $effect(() => {
     const id = view.videoId
-    if (!id) return
-    ensureTitle(id)
-    history.replaceState(null, "", `?v=${id}`)
-    document.title = `${titleOf(id)} - Sameframe`
+    if (id) {
+      ensureTitle(id)
+      document.title = `${titleOf(id)} - Sameframe`
+    } else {
+      document.title = "Sameframe"
+    }
+  })
+
+  // ensure titles for every queued video, not just the current one
+  $effect(() => {
+    // read length to subscribe to queue changes; reading items ensures titles for new ids
+    const q = view.queue
+    for (const id of q) ensureTitle(id)
   })
 
   function onKeydown(e: KeyboardEvent) {
@@ -39,6 +48,7 @@
       e.preventDefault()
       session.seekBy(5)
     } else if (e.key.toLowerCase() === "f") {
+      if (!view.videoId) return
       e.preventDefault()
       session.toggleFullscreen()
     }

@@ -8,6 +8,16 @@ export type VideoId = string & { readonly [__videoId]: true }
 
 export const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/
 
+declare const __roomCode: unique symbol
+export type RoomCode = string & { readonly [__roomCode]: true }
+
+export const ROOM_CODE_RE = /^[A-Z0-9]{6}$/
+
+export type RoomMetadata = {
+  code: RoomCode
+  createdAt: number
+}
+
 export type ServerMsg =
   | { type: "clients"; count: number }
   | { type: "public_url"; url: string }

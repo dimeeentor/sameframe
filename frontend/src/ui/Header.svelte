@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { view } from "../state/session.svelte"
+  import { view, session } from "../state/session.svelte"
   import { settings, setMusicMode, toggleTheme } from "../state/settings.svelte"
 
   let copied = $state(false)
   let menuOpen = $state(false)
   let copiedTimer: ReturnType<typeof setTimeout> | undefined
   let wrap: HTMLDivElement | undefined = $state()
+  let joinCode = $state("")
+  let joinError = $state("")
 
   const connText = $derived(
     view.connection === "open"
@@ -32,6 +34,20 @@
     }
   }
 
+  function doJoin() {
+    const v = joinCode.trim().toUpperCase()
+    if (!/^[A-Z0-9]{6}$/.test(v)) {
+      joinError = "Enter 6-char code"
+      return
+    }
+    joinError = ""
+    session.joinRoom(v)
+  }
+
+  function newRoom() {
+    session.createNewRoom()
+  }
+
   function onDocumentClick(e: MouseEvent) {
     if (menuOpen && wrap && !wrap.contains(e.target as Node)) menuOpen = false
   }
@@ -46,10 +62,14 @@
       <span class={dotClass}></span>
       <span>{connText}</span>
       <span id="clients">{viewerLabel}</span>
+      {#if view.roomCode}
+        <span class="room-badge" title="Room code. Share this">{view.roomCode}</span>
+      {/if}
     </div>
     <button class="pill" title="Copy invite link" onclick={share}>
       {copied ? "✓ Copied" : "Share"}
     </button>
+    <button class="pill" title="Create new room" onclick={newRoom}>New room</button>
     <div class="menu-wrap" bind:this={wrap}>
       <button
         class="pill icon"
@@ -77,6 +97,18 @@
           >
             {settings.theme === "light" ? "Dark mode" : "Light mode"}
           </button>
+          <div class="menu-divider"></div>
+          <div class="menu-join">
+            <input
+              class="menu-input"
+              placeholder="Room code"
+              maxlength={6}
+              bind:value={joinCode}
+              onkeydown={(e) => e.key === "Enter" && doJoin()}
+            />
+            <button class="menu-item" type="button" onclick={doJoin}>Join</button>
+          </div>
+          {#if joinError}<div class="menu-error">{joinError}</div>{/if}
         </div>
       {/if}
     </div>

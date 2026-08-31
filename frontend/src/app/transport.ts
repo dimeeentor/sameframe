@@ -1,6 +1,7 @@
 /** WS lifecycle + HTTP polling fallback, reduced to one ServerMsg stream.
- *  Nothing downstream can tell which transport produced a message. */
-import type { ConnectionStatus } from "./domain.ts"
+ *  Nothing downstream can tell which transport produced a message.
+ *  Room-aware: connects to /ws/:code and polls /api/sync?room=CODE. */
+import type { ConnectionStatus, RoomCode } from "./domain.ts"
 import { parseServerMsg, type ClientMsg, type ServerMsg } from "./wire.ts"
 
 export type Transport = {
@@ -15,7 +16,7 @@ export type Transport = {
 const RECONNECT_MS = 1500
 const POLL_MS = 2000
 
-export function createTransport(): Transport {
+export function createTransport(roomCode: RoomCode): Transport {
   let ws: WebSocket | null = null
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let retryTimer: ReturnType<typeof setTimeout> | null = null
@@ -42,7 +43,7 @@ export function createTransport(): Transport {
 
   async function pollOnce() {
     try {
-      const res = await fetch("/api/sync")
+      const res = await fetch(`/api/sync?room=${roomCode}`)
       if (res.ok) emit(await res.json())
     } catch {}
   }
@@ -69,16 +70,13 @@ export function createTransport(): Transport {
       sock.send(JSON.stringify(msg))
       return
     }
-    // Parity: nudge the server while polling (no server-side write path over
-    // HTTP exists; the poll snapshot reconciles whatever was missed)
-    if (msg.type === "load") fetch(`/api/sync?poll=1`).catch(() => {})
   }
 
   function connect() {
     if (stopped) return
     const proto = location.protocol === "https:" ? "wss:" : "ws:"
     try {
-      ws = new WebSocket(`${proto}//${location.host}/ws`)
+      ws = new WebSocket(`${proto}//${location.host}/ws/${roomCode}`)
     } catch {
       setStatus("offline")
       startPolling()
@@ -90,7 +88,6 @@ export function createTransport(): Transport {
       stopPolling()
       sendClient({ type: "sync_request" })
     }
-    // onerror is always followed by onclose; retry/polling happens there
     ws.onerror = () => {}
     ws.onclose = () => {
       setStatus("offline")

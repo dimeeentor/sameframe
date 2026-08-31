@@ -1,8 +1,8 @@
 /** Domain types — no transport, no YT, no JSON. Validation enters here. */
 
-import { VIDEO_ID_RE, type VideoId } from "../../../shared/messages.ts"
+import { ROOM_CODE_RE, VIDEO_ID_RE, type RoomCode, type VideoId } from "../../../shared/messages.ts"
 
-export type { VideoId }
+export type { VideoId, RoomCode }
 
 /** Pure parser: raw 11-char id, youtu.be, ?v=, /embed|shorts|v/ paths, fallback regex. */
 export function parseVideoId(input: string): VideoId | null {
@@ -40,23 +40,22 @@ export type SyncSnapshot = {
   readonly shareUrl: string
   readonly viewerCount: number
   readonly connection: ConnectionStatus
+  readonly roomCode: RoomCode | null
 }
 
-/** Share-link policy: tunnel URL wins, then non-local origin, then current URL. */
+/** Share-link policy: room code is the only URL param. No ?v= anymore — video lives in KV. */
 export function composeShareUrl(
   publicUrl: string | null,
-  videoId: VideoId | null,
+  roomCode: RoomCode | null,
 ): string {
-  const v = videoId ? `?v=${videoId}` : location.search
-  if (publicUrl) return publicUrl.replace(/\/$/, "") + v
-  const host = location.hostname
-  const isLocal =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host.startsWith("192.168.") ||
-    host.startsWith("10.")
-  if (!isLocal) return location.origin + v
-  return location.href
+  const base = publicUrl ? publicUrl.replace(/\/$/, "") : location.origin
+  if (!roomCode) return base
+  return `${base}/?room=${roomCode}`
+}
+
+export function parseRoomCode(input: string): RoomCode | null {
+  const v = input.trim().toUpperCase()
+  return ROOM_CODE_RE.test(v) ? (v as RoomCode) : null
 }
 
 export function isTypingTarget(target: EventTarget | null): boolean {

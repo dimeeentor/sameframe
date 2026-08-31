@@ -1,77 +1,81 @@
+/// <reference lib="deno.unstable" />
 import { Hono } from "hono"
 import { upgradeWebSocket } from "hono/deno"
 import { parseClientMsg } from "../shared/messages.ts"
+import type { RoomCode, VideoId } from "../shared/messages.ts"
 import {
-  broadcast,
-  clients,
+  addClientToRoom,
+  broadcastToRoom,
+  ensureRoom,
+  getRoomClientCount,
+  getRoomState,
+  isValidCode,
+  mutateRoom,
+  removeClientFromRoom,
+} from "./rooms.ts"
+import {
+  applyLoad,
+  applyPause,
+  applyPlay,
+  applyQueueAdd,
+  applyQueueClear,
+  applyQueueRemove,
+  applyQueueReorder,
+  applyRate,
+  applySeek,
   getSyncPayload,
-  publicUrl,
-  setVideo,
-  state,
-} from "./state.ts"
+  handleEnded,
+} from "./room-state.ts"
+import { publicUrl } from "./state.ts"
 
-function loadMsg(videoId: string, queueIndex: number) {
-  return {
-    type: "load",
-    videoId,
-    currentTime: 0,
-    isPlaying: true,
-    queue: state.queue,
-    queueIndex,
-  }
-}
-
-function queueMsg() {
-  return {
-    type: "queue" as const,
-    queue: state.queue,
-    queueIndex: state.queueIndex,
-  }
-}
-
-/** Shared mutation behind every "jump to queue entry" path (ended). */
-function advanceTo(index: number) {
-  if (index < 0 || index >= state.queue.length) return
-  const id = state.queue[index]
-  state.queueIndex = index
-  state.videoId = id
-  state.currentTime = 0
-  state.isPlaying = true
-  state.updatedAt = Date.now()
-  broadcast(loadMsg(id, index))
-}
+const socketRooms = new WeakMap<WebSocket, RoomCode>()
 
 export const ws = new Hono()
 
-ws.get("/ws", (c) => {
+ws.get("/ws/:code", (c) => {
+  const raw = c.req.param("code").toUpperCase()
+  if (!isValidCode(raw)) return c.text("invalid room code", 400)
+  const code = raw as RoomCode
+
   if (c.req.header("upgrade") !== "websocket") {
     return c.text("Expected websocket", 426)
   }
+
   return upgradeWebSocket(c, {
-    onOpen: (_event, ws) => {
+    onOpen: async (_event, ws) => {
       const socket = ws.raw
       if (!(socket instanceof WebSocket)) return
-      clients.add(socket)
-      console.log(`client connected (${clients.size})`)
-      socket.send(JSON.stringify(getSyncPayload()))
+      socketRooms.set(socket, code)
+
+      const state = await ensureRoom(code)
+      addClientToRoom(code, socket)
+      console.log(`client connected to ${code} (${getRoomClientCount(code)})`)
+
+      socket.send(JSON.stringify(getSyncPayload(state, publicUrl)))
       if (publicUrl) {
         socket.send(JSON.stringify({ type: "public_url", url: publicUrl }))
       }
-      broadcast({ type: "clients", count: clients.size })
+      broadcastToRoom(code, { type: "clients", count: getRoomClientCount(code) })
     },
 
     onClose: (_event, ws) => {
       const socket = ws.raw
       if (!(socket instanceof WebSocket)) return
-      clients.delete(socket)
-      console.log(`client disconnected (${clients.size})`)
-      broadcast({ type: "clients", count: clients.size })
+      const roomCode = socketRooms.get(socket)
+      if (!roomCode) return
+      removeClientFromRoom(roomCode, socket)
+      socketRooms.delete(socket)
+      console.log(`client disconnected from ${roomCode} (${getRoomClientCount(roomCode)})`)
+      broadcastToRoom(roomCode, { type: "clients", count: getRoomClientCount(roomCode) })
     },
 
-    onMessage: (event, ws) => {
+    onMessage: async (event, ws) => {
       const socket = ws.raw
       if (!(socket instanceof WebSocket)) return
       if (typeof event.data !== "string") return
+      const roomCode = socketRooms.get(socket)
+      if (!roomCode) return
+
       let raw: unknown
       try {
         raw = JSON.parse(event.data)
@@ -80,109 +84,176 @@ ws.get("/ws", (c) => {
       }
       const msg = parseClientMsg(raw)
       if (!msg) return
+
       try {
         switch (msg.type) {
           case "load": {
-            setVideo(msg.videoId, true)
+            const res = await mutateRoom(roomCode, (s) => applyLoad(s, msg.videoId))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, {
+              type: "load",
+              videoId: msg.videoId,
+              currentTime: 0,
+              isPlaying: true,
+              queue: res.state.queue,
+              queueIndex: res.state.queueIndex,
+            })
             break
           }
           case "queue_add": {
-            if (!state.queue.includes(msg.videoId)) {
-              state.queue.push(msg.videoId)
-              broadcast(queueMsg())
+            // add then, if was empty, also load
+            const before = await getRoomState(roomCode)
+            if (!before) return
+            const wasEmpty = before.queue.length === 0 && !before.videoId
+            const addRes = await mutateRoom(roomCode, (s) => {
+              if (s.queue.includes(msg.videoId)) return null
+              return applyQueueAdd(s, msg.videoId)
+            })
+            if (!addRes.ok) return
+            // only broadcast queue if we actually added
+            if (before.queue.length !== addRes.state.queue.length) {
+              broadcastToRoom(roomCode, {
+                type: "queue",
+                queue: addRes.state.queue,
+                queueIndex: addRes.state.queueIndex,
+              })
             }
-            if (!state.videoId) {
-              setVideo(msg.videoId, true)
+            if (wasEmpty) {
+              const loadRes = await mutateRoom(roomCode, (s) => applyLoad(s, msg.videoId))
+              if (!loadRes.ok) return
+              broadcastToRoom(roomCode, {
+                type: "load",
+                videoId: msg.videoId,
+                currentTime: 0,
+                isPlaying: true,
+                queue: loadRes.state.queue,
+                queueIndex: loadRes.state.queueIndex,
+              })
             }
             break
           }
           case "queue_remove": {
-            const idx = msg.index
-            if (idx >= state.queue.length) break
-            state.queue.splice(idx, 1)
-            if (state.queueIndex >= state.queue.length) {
-              state.queueIndex = state.queue.length - 1
-            }
-            if (state.queueIndex === idx && state.queue.length > 0) {
-              const newId = state.queue[state.queueIndex]
+            const before = await getRoomState(roomCode)
+            if (!before) return
+            if (msg.index < 0 || msg.index >= before.queue.length) break
+
+            // if removing the currently playing index and something remains -> load next
+            const removingCurrent = before.queueIndex === msg.index && before.queue.length > 1
+            if (removingCurrent) {
+              // determine which id will be current after removal
+              const queueAfter = before.queue.filter((_, i) => i !== msg.index)
+              let newIndex = before.queueIndex
+              if (newIndex >= queueAfter.length) newIndex = queueAfter.length - 1
+              const newId = queueAfter[newIndex]
               if (newId) {
-                state.videoId = newId
-                state.currentTime = 0
-                state.isPlaying = true
-                state.updatedAt = Date.now()
-                broadcast(loadMsg(newId, state.queueIndex))
+                const res = await mutateRoom(roomCode, (s) => {
+                  // remove then set video to newId
+                  const removed = applyQueueRemove(s, msg.index)
+                  // removed.queue is queueAfter, now load newId
+                  const idx = removed.queue.indexOf(newId as VideoId)
+                  return {
+                    ...removed,
+                    videoId: newId as VideoId,
+                    queueIndex: idx,
+                    currentTime: 0,
+                    isPlaying: true,
+                    updatedAt: Date.now(),
+                  }
+                })
+                if (!res.ok) return
+                broadcastToRoom(roomCode, {
+                  type: "load",
+                  videoId: newId,
+                  currentTime: 0,
+                  isPlaying: true,
+                  queue: res.state.queue,
+                  queueIndex: res.state.queueIndex,
+                })
                 break
               }
             }
-            broadcast(queueMsg())
-            if (state.queue.length === 0) {
-              state.videoId = null
-              state.queueIndex = -1
-            }
+
+            const res = await mutateRoom(roomCode, (s) => {
+              const after = applyQueueRemove(s, msg.index)
+              // if empty, clear videoId
+              if (after.queue.length === 0) {
+                return { ...after, videoId: null, queueIndex: -1 }
+              }
+              return after
+            })
+            if (!res.ok) return
+            broadcastToRoom(roomCode, {
+              type: "queue",
+              queue: res.state.queue,
+              queueIndex: res.state.queueIndex,
+            })
             break
           }
           case "queue_reorder": {
-            const { from, to } = msg
-            if (
-              from >= state.queue.length ||
-              to >= state.queue.length ||
-              from === to
-            ) {
-              break
-            }
-            const [videoId] = state.queue.splice(from, 1)
-            state.queue.splice(to, 0, videoId)
-            state.queueIndex = state.videoId
-              ? state.queue.indexOf(state.videoId)
-              : -1
-            broadcast(queueMsg())
+            const res = await mutateRoom(roomCode, (s) =>
+              applyQueueReorder(s, msg.from, msg.to)
+            )
+            if (!res.ok) return
+            // no-op check: queue unchanged
+            if (res.state.queue.length === 0) break
+            broadcastToRoom(roomCode, {
+              type: "queue",
+              queue: res.state.queue,
+              queueIndex: res.state.queueIndex,
+            })
             break
           }
           case "queue_clear": {
-            state.queue = []
-            state.queueIndex = -1
-            broadcast({ type: "queue", queue: state.queue, queueIndex: -1 })
+            const res = await mutateRoom(roomCode, (s) => applyQueueClear(s))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, { type: "queue", queue: [], queueIndex: -1 })
             break
           }
           case "play": {
-            state.currentTime = msg.currentTime
-            state.isPlaying = true
-            state.updatedAt = Date.now()
-            broadcast({ type: "play", currentTime: state.currentTime }, socket)
+            const res = await mutateRoom(roomCode, (s) => applyPlay(s, msg.currentTime))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, { type: "play", currentTime: res.state.currentTime }, socket)
             break
           }
           case "pause": {
-            state.currentTime = msg.currentTime
-            state.isPlaying = false
-            state.updatedAt = Date.now()
-            broadcast({ type: "pause", currentTime: state.currentTime }, socket)
+            const res = await mutateRoom(roomCode, (s) => applyPause(s, msg.currentTime))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, { type: "pause", currentTime: res.state.currentTime }, socket)
             break
           }
           case "seek": {
-            state.currentTime = msg.currentTime
-            state.updatedAt = Date.now()
-            broadcast({ type: "seek", currentTime: state.currentTime }, socket)
+            const res = await mutateRoom(roomCode, (s) => applySeek(s, msg.currentTime))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, { type: "seek", currentTime: res.state.currentTime }, socket)
             break
           }
           case "ended": {
-            const last = state.queue.length - 1
-            if (state.queueIndex < last) {
-              advanceTo(state.queueIndex + 1)
-            } else if (state.queue.length > 1 && state.queueIndex === last) {
-              advanceTo(0)
-            }
+            const res = await mutateRoom(roomCode, (s) => {
+              const next = handleEnded(s)
+              return next ?? null
+            })
+            if (!res.ok) return
+            // find which index we advanced to
+            broadcastToRoom(roomCode, {
+              type: "load",
+              videoId: res.state.videoId!,
+              currentTime: 0,
+              isPlaying: true,
+              queue: res.state.queue,
+              queueIndex: res.state.queueIndex,
+            })
             break
           }
           case "rate": {
-            state.playbackRate = msg.playbackRate
-            broadcast(
-              { type: "rate", playbackRate: state.playbackRate },
-              socket,
-            )
+            const res = await mutateRoom(roomCode, (s) => applyRate(s, msg.playbackRate))
+            if (!res.ok) return
+            broadcastToRoom(roomCode, { type: "rate", playbackRate: res.state.playbackRate }, socket)
             break
           }
           case "sync_request": {
-            socket.send(JSON.stringify(getSyncPayload()))
+            const state = await getRoomState(roomCode)
+            if (!state) return
+            socket.send(JSON.stringify(getSyncPayload(state, publicUrl)))
             break
           }
           default: {
@@ -191,7 +262,7 @@ ws.get("/ws", (c) => {
           }
         }
       } catch (err) {
-        console.error("ws message error", err)
+        console.error(`ws message error in room ${roomCode}`, err)
       }
     },
 

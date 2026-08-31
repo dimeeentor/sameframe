@@ -5,7 +5,7 @@
  *  Key invariant: the server broadcasts `load`/`queue` back to their sender, so
  *  the reducer must be idempotent under own-echo (a `load` for the video we
  *  already loaded must NOT reload the player — that restarts playback). */
-import { composeShareUrl, type ConnectionStatus, type SyncSnapshot, type VideoId } from "./domain.ts"
+import { composeShareUrl, type ConnectionStatus, type RoomCode, type SyncSnapshot, type VideoId } from "./domain.ts"
 import type { ClientMsg, ServerMsg } from "./wire.ts"
 import type { Player, PlayerEvent } from "./player.ts"
 import type { Transport } from "./transport.ts"
@@ -37,6 +37,7 @@ type SessionState = {
   connection: ConnectionStatus
   suppressUntil: number
   lastTickTime: number
+  roomCode: RoomCode | null
 }
 
 const TICK_MS = 400
@@ -44,7 +45,7 @@ const PUBLIC_URL_POLL_MS = 5000
 const DRIFT_LIMIT = 1.2
 const USER_SEEK_JUMP = 1.5
 
-export function createSession(transport: Transport, player: Player): Session {
+export function createSession(transport: Transport, player: Player, roomCode: RoomCode): Session {
   const s: SessionState = {
     videoId: null,
     queue: [],
@@ -56,6 +57,7 @@ export function createSession(transport: Transport, player: Player): Session {
     connection: "connecting",
     suppressUntil: 0,
     lastTickTime: 0,
+    roomCode,
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
@@ -70,9 +72,10 @@ export function createSession(transport: Transport, player: Player): Session {
       isPlaying: s.isPlaying,
       playbackRate: s.playbackRate,
       publicUrl: s.publicUrl,
-      shareUrl: composeShareUrl(s.publicUrl, s.videoId),
+      shareUrl: composeShareUrl(s.publicUrl, s.roomCode),
       viewerCount: s.viewerCount,
       connection: s.connection,
+      roomCode: s.roomCode,
     }
     subs.forEach((cb) => cb(snap))
   }
@@ -310,6 +313,7 @@ export function createSession(transport: Transport, player: Player): Session {
   }
 
   function toggleFullscreen() {
+    if (!s.videoId) return
     player.toggleFullscreen()
   }
 
