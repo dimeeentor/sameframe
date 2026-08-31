@@ -45,11 +45,22 @@ ws.get("/ws/:code", (c) => {
     onOpen: async (_event, ws) => {
       const socket = ws.raw
       if (!(socket instanceof WebSocket)) return
+      // register synchronously before any await — avoids race where
+      // client disconnects during ensureRoom and the dead socket gets
+      // added after onClose already tried to remove it
       socketRooms.set(socket, code)
-
-      const state = await ensureRoom(code)
       addClientToRoom(code, socket)
       console.log(`client connected to ${code} (${getRoomClientCount(code)})`)
+
+      const state = await ensureRoom(code)
+      // if socket closed while we were awaiting KV, prune and don't send
+      if (socket.readyState !== WebSocket.OPEN) {
+        console.log(`client ${code} closed during handshake, cleaning up`)
+        removeClientFromRoom(code, socket)
+        socketRooms.delete(socket)
+        broadcastToRoom(code, { type: "clients", count: getRoomClientCount(code) })
+        return
+      }
 
       socket.send(JSON.stringify(getSyncPayload(state, publicUrl)))
       if (publicUrl) {
@@ -66,6 +77,24 @@ ws.get("/ws/:code", (c) => {
       removeClientFromRoom(roomCode, socket)
       socketRooms.delete(socket)
       console.log(`client disconnected from ${roomCode} (${getRoomClientCount(roomCode)})`)
+      broadcastToRoom(roomCode, { type: "clients", count: getRoomClientCount(roomCode) })
+    },
+
+    onError: (event, ws) => {
+      const raw = (ws as unknown as { raw?: unknown } | undefined)?.raw
+      if (!(raw instanceof WebSocket)) {
+        console.error("ws error", event)
+        return
+      }
+      const socket = raw
+      const roomCode = socketRooms.get(socket)
+      if (!roomCode) {
+        console.error("ws error (no room)", event)
+        return
+      }
+      console.error("ws error in room", roomCode, event)
+      removeClientFromRoom(roomCode, socket)
+      socketRooms.delete(socket)
       broadcastToRoom(roomCode, { type: "clients", count: getRoomClientCount(roomCode) })
     },
 
@@ -265,7 +294,5 @@ ws.get("/ws/:code", (c) => {
         console.error(`ws message error in room ${roomCode}`, err)
       }
     },
-
-    onError: (event) => console.error("ws error", event),
   })
 })

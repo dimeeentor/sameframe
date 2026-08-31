@@ -39,11 +39,24 @@ export function removeClientFromRoom(code: RoomCode, ws: WebSocket): void {
   if (set.size === 0) roomClients.delete(code)
 }
 
+function pruneRoom(code: RoomCode): void {
+  const set = roomClients.get(code)
+  if (!set) return
+  for (const ws of set) {
+    if (ws.readyState !== WebSocket.OPEN) {
+      set.delete(ws)
+    }
+  }
+  if (set.size === 0) roomClients.delete(code)
+}
+
 export function getRoomClientCount(code: RoomCode): number {
+  pruneRoom(code)
   return roomClients.get(code)?.size ?? 0
 }
 
 export function broadcastToRoom(code: RoomCode, msg: unknown, exclude?: WebSocket): void {
+  pruneRoom(code)
   const set = roomClients.get(code)
   if (!set) return
   const data = JSON.stringify(msg)
