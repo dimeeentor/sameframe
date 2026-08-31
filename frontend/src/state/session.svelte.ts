@@ -4,13 +4,11 @@ import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
 import { parseRoomCode } from "../app/domain.ts"
 import type { RoomCode, SyncSnapshot } from "../app/domain.ts"
-import { ROOM_CODE_RE } from "../../../shared/messages.ts"
 
 function getRoomFromUrl(): RoomCode | null {
   const v = new URLSearchParams(location.search).get("room")
   if (!v) return null
-  const upper = v.trim().toUpperCase()
-  return ROOM_CODE_RE.test(upper) ? (upper as RoomCode) : null
+  return parseRoomCode(v)
 }
 
 async function ensureRoomCode(): Promise<RoomCode> {
@@ -29,8 +27,6 @@ async function ensureRoomCode(): Promise<RoomCode> {
   return code
 }
 
-// Export a promise for the session; components await it via view.roomCode initial null.
-// For simplicity, we block module init with top-level await pattern via placeholder.
 let _session: ReturnType<typeof createSession> | null = null
 let _code: RoomCode | null = getRoomFromUrl()
 
@@ -47,49 +43,32 @@ export const view = $state<SyncSnapshot>({
   roomCode: null,
 })
 
-async function init() {
+const ready: Promise<void> = (async () => {
   const code = await ensureRoomCode()
   _code = code
   const transport = createTransport(code)
   _session = createSession(transport, createPlayer(), code)
   _session.subscribe((snap) => Object.assign(view, snap))
   _session.start()
-}
+})().catch((e) => console.error("[sameframe] room init failed", e))
 
-// kick off immediately
-init().catch((e) => console.error("[sameframe] room init failed", e))
-
-// Thin proxy that queues calls until _session is ready
 function getSession(): ReturnType<typeof createSession> {
   if (!_session) throw new Error("session not ready yet")
   return _session
 }
 
 export const session = {
-  start() { /* init already started */ },
+  start() {},
   stop() { _session?.stop() },
   attachPlayer(host: HTMLElement) {
-    // if not ready, poll until ready
     if (_session) _session.attachPlayer(host)
-    else {
-      const iv = setInterval(() => {
-        if (_session) {
-          _session.attachPlayer(host)
-          clearInterval(iv)
-        }
-      }, 50)
-    }
+    else void ready.then(() => _session!.attachPlayer(host))
   },
   subscribe(cb: (s: SyncSnapshot) => void) {
     if (_session) return _session.subscribe(cb)
-    // queue subscriber until ready
-    const iv = setInterval(() => {
-      if (_session) {
-        clearInterval(iv)
-        _session.subscribe(cb)
-      }
-    }, 50)
-    return () => clearInterval(iv)
+    let off: () => void = () => {}
+    void ready.then(() => { off = _session!.subscribe(cb) })
+    return () => off()
   },
   loadVideo(id: Parameters<ReturnType<typeof createSession>["loadVideo"]>[0]) { getSession().loadVideo(id) },
   addToQueue(id: Parameters<ReturnType<typeof createSession>["addToQueue"]>[0]) { getSession().addToQueue(id) },

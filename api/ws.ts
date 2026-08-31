@@ -81,12 +81,11 @@ ws.get("/ws/:code", (c) => {
     },
 
     onError: (event, ws) => {
-      const raw = (ws as unknown as { raw?: unknown } | undefined)?.raw
-      if (!(raw instanceof WebSocket)) {
+      const socket = ws.raw
+      if (!(socket instanceof WebSocket)) {
         console.error("ws error", event)
         return
       }
-      const socket = raw
       const roomCode = socketRooms.get(socket)
       if (!roomCode) {
         console.error("ws error (no room)", event)

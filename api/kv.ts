@@ -14,5 +14,4 @@ export const ROOM_TTL_MS = 24 * 60 * 60 * 1000 // 24h
 
 export const kvKeys = {
   roomState: (code: string) => ["rooms", code, "state"] as const,
-  roomByCode: (code: string) => ["rooms_by_code", code] as const,
 }
