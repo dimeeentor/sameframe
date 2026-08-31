@@ -73,20 +73,20 @@ export function createPlayer(): Player {
   let yt: YTPlayer | null = null
   let ready = false
   let host: HTMLElement | null = null
-  const pending: Array<() => void> = []
+  const pending: Array<(p: YTPlayer) => void> = []
   const subs = new Set<(e: PlayerEvent) => void>()
 
   const emit = (e: PlayerEvent) => subs.forEach((cb) => cb(e))
 
-  function whenReady(fn: () => void) {
-    if (ready && yt) fn()
+  function whenReady(fn: (p: YTPlayer) => void) {
+    if (ready && yt) fn(yt)
     else pending.push(fn)
   }
 
   function create() {
     if (yt || !host) return
     try {
-      yt = new YT.Player(host, {
+      const player = new YT.Player(host, {
         host: "https://www.youtube-nocookie.com",
         width: "100%",
         height: "100%",
@@ -99,8 +99,9 @@ export function createPlayer(): Player {
         },
         events: {
           onReady: () => {
+            yt = player
             ready = true
-            for (const fn of pending.splice(0)) fn()
+            for (const fn of pending.splice(0)) fn(player)
             emit({ kind: "ready" })
           },
           onError: (e) => {
@@ -163,14 +164,14 @@ export function createPlayer(): Player {
       handshake()
     },
     load(id, startAt) {
-      whenReady(() => {
+      whenReady((p) => {
         try {
-          yt!.loadVideoById({ videoId: id, startSeconds: startAt })
+          p.loadVideoById({ videoId: id, startSeconds: startAt })
         } catch (err) {
           console.error("[sameframe] loadVideoById failed", err)
           setTimeout(() => {
             try {
-              yt!.loadVideoById({ videoId: id, startSeconds: startAt })
+              p.loadVideoById({ videoId: id, startSeconds: startAt })
             } catch (e) {
               console.error(e)
             }
@@ -179,30 +180,30 @@ export function createPlayer(): Player {
       })
     },
     play() {
-      whenReady(() => {
+      whenReady((p) => {
         try {
-          yt!.playVideo()
+          p.playVideo()
         } catch {}
       })
     },
     pause() {
-      whenReady(() => {
+      whenReady((p) => {
         try {
-          yt!.pauseVideo()
+          p.pauseVideo()
         } catch {}
       })
     },
     seek(t) {
-      whenReady(() => {
+      whenReady((p) => {
         try {
-          yt!.seekTo(t, true)
+          p.seekTo(t, true)
         } catch {}
       })
     },
     setRate(rate) {
-      whenReady(() => {
+      whenReady((p) => {
         try {
-          yt!.setPlaybackRate(rate)
+          p.setPlaybackRate(rate)
         } catch {}
       })
     },
@@ -231,7 +232,8 @@ export function createPlayer(): Player {
       // YT replaces the #player div with its iframe (keeping the id), so the
       // fullscreen target is the iframe itself, its child, or the wrapper.
       const el = document.getElementById("player")
-      const frame = el?.querySelector("iframe") as HTMLIFrameElement | null
+      const found = el?.querySelector("iframe")
+      const frame = found instanceof HTMLIFrameElement ? found : null
       const target =
         frame ?? (el instanceof HTMLIFrameElement ? el : (el?.parentElement ?? null))
       target?.requestFullscreen?.().catch(() => {})

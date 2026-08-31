@@ -4,6 +4,7 @@
   padding: 0;
 }
 :root {
+  color-scheme: light;
   --bg: #f6f2eb;
   --surface: rgba(255, 253, 249, 0.86);
   --surface-solid: #fffdf9;
@@ -20,6 +21,7 @@
   --radius-md: 15px;
 }
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg: #20243a;
   --surface: rgba(42, 47, 69, 0.86);
   --surface-solid: #2a2f45;
@@ -258,6 +260,9 @@ button:active {
 #loadBtn {
   color: #fffaf4;
   background: var(--ink);
+}
+[data-theme="dark"] #loadBtn {
+  background: var(--accent);
 }
 #loadBtn:hover {
   color: #fff;

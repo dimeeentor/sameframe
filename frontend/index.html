@@ -6,6 +6,19 @@
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <title>Sameframe</title>
+    <script>
+      // Pre-paint theme (must mirror settings.svelte.ts): explicit choice wins,
+      // else system preference. Prevents a light flash in dark mode.
+      {
+        const t = localStorage.getItem("sameframe-theme")
+        document.documentElement.dataset.theme =
+          t === "light" || t === "dark"
+            ? t
+            : matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark"
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>

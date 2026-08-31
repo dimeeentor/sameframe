@@ -15,7 +15,7 @@ export function ensureTitle(id: string): void {
     try {
       const res = await fetch(`/api/title?id=${id}`)
       if (res.ok) {
-        const j = (await res.json()) as { title?: string }
+        const j = (await res.json()) as { title: string }
         titles.set(id, j.title ?? id)
         return
       }

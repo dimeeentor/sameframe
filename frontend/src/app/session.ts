@@ -171,6 +171,10 @@ export function createSession(transport: Transport, player: Player): Session {
       case "public_url":
         s.publicUrl = m.url
         break
+      default: {
+        const _exhaustive: never = m
+        void _exhaustive
+      }
     }
     publish()
   }
@@ -226,9 +230,10 @@ export function createSession(transport: Transport, player: Player): Session {
     try {
       const res = await fetch("/api/public-url")
       if (!res.ok) return
-      const j = (await res.json()) as { url: string | null }
-      if (j.url && j.url !== s.publicUrl) {
-        s.publicUrl = j.url
+      const j = (await res.json()) as { url: string }
+      const url = j.url
+      if (url && url !== s.publicUrl) {
+        s.publicUrl = url
         publish()
       }
     } catch {}

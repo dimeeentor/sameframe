@@ -64,8 +64,9 @@ export function createTransport(): Transport {
   }
 
   function sendClient(msg: ClientMsg) {
-    if (isOpen()) {
-      ws!.send(JSON.stringify(msg))
+    const sock = ws
+    if (sock?.readyState === WebSocket.OPEN) {
+      sock.send(JSON.stringify(msg))
       return
     }
     // Parity: nudge the server while polling (no server-side write path over

@@ -1,21 +1,22 @@
 /** Domain types — no transport, no YT, no JSON. Validation enters here. */
 
-declare const __videoId: unique symbol
-export type VideoId = string & { readonly [__videoId]: true }
+import { VIDEO_ID_RE, type VideoId } from "../../../shared/messages.ts"
+
+export type { VideoId }
 
 /** Pure parser: raw 11-char id, youtu.be, ?v=, /embed|shorts|v/ paths, fallback regex. */
 export function parseVideoId(input: string): VideoId | null {
   const url = input.trim()
   if (!url) return null
-  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url as VideoId
+  if (VIDEO_ID_RE.test(url)) return url as VideoId
   try {
     const u = new URL(url)
     if (u.hostname.includes("youtu.be")) {
       const id = u.pathname.slice(1).split("/")[0].slice(0, 11)
-      if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id as VideoId
+      if (VIDEO_ID_RE.test(id)) return id as VideoId
     }
     const v = u.searchParams.get("v")
-    if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v as VideoId
+    if (v && VIDEO_ID_RE.test(v)) return v as VideoId
     const m = u.pathname.match(/\/(embed|shorts|v)\/([a-zA-Z0-9_-]{11})/)
     if (m) return m[2] as VideoId
   } catch {}
@@ -23,7 +24,7 @@ export function parseVideoId(input: string): VideoId | null {
   return m ? (m[0] as VideoId) : null
 }
 
-export const thumb = (id: string): string =>
+export const thumb = (id: VideoId): string =>
   `https://img.youtube.com/vi/${id}/hqdefault.jpg`
 
 export type ConnectionStatus = "connecting" | "open" | "polling" | "offline"

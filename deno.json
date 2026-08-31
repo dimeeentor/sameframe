@@ -14,6 +14,6 @@
     "dev": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env api/server.ts",
     "start": "deno task build:fe && deno run --allow-net --allow-read --allow-sys api/server.ts",
     "share": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env api/server.ts --public",
-    "check": "deno check api/*.ts && cd frontend && deno check src/app/*.ts src/state/*.svelte.ts"
+    "check": "deno check api/*.ts shared/*.ts && cd frontend && deno check src/app/*.ts src/state/*.svelte.ts"
   }
 }
