@@ -10,7 +10,7 @@
     "install:fe": "cd frontend && deno install",
     "build:fe": "cd frontend && deno run -A npm:vite build",
     "dev:fe": "cd frontend && deno run -A npm:vite",
-    "build": "deno task build:fe",
+    "build": "deno task install:fe && deno task build:fe",
     "dev": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env --unstable-kv api/server.ts",
     "start": "deno task build:fe && deno run --allow-net --allow-read --allow-sys --unstable-kv api/server.ts",
     "share": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env --unstable-kv api/server.ts --public",
