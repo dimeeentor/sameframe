@@ -1,20 +1,14 @@
-# Build output — Svelte frontend (frontend/ -> frontend/dist)
 dist/
 
-# Dependencies
 node_modules/
 
-# Deno cache
 .deno/
 
-# OS
 .DS_Store
 Thumbs.db
 *.log
 
-# Env
 .env
 .env.local
 
-# Tunnel / temp
 *.lhr.*
