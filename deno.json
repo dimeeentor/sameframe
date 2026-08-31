@@ -1,13 +1,20 @@
 {
+  "imports": {
+    "hono": "npm:hono@^4"
+  },
+  "unstable": ["kv"],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "deno.ns", "deno.window", "esnext"],
     "strict": true
   },
   "tasks": {
-    "dev": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys server.ts",
-    "start": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-sys server.ts",
-    "share": "deno run --allow-read --allow-write --allow-net --allow-env build.ts && deno run --allow-net --allow-read --allow-run --allow-sys server.ts --public",
-    "build": "deno run --allow-read --allow-write --allow-net --allow-env build.ts",
-    "check": "deno check public/app.ts server.ts"
+    "install:fe": "cd frontend && deno install",
+    "build:fe": "cd frontend && deno run -A npm:vite build",
+    "dev:fe": "cd frontend && deno run -A npm:vite",
+    "build": "deno task build:fe",
+    "dev": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env --unstable-kv api/server.ts",
+    "start": "deno task build:fe && deno run --allow-net --allow-read --allow-sys --unstable-kv api/server.ts",
+    "share": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env --unstable-kv api/server.ts --public",
+    "check": "deno check --unstable-kv api/*.ts shared/*.ts && cd frontend && deno check src/app/*.ts src/state/*.svelte.ts"
   }
 }

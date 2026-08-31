@@ -4,6 +4,7 @@
   padding: 0;
 }
 :root {
+  color-scheme: light;
   --bg: #f6f2eb;
   --surface: rgba(255, 253, 249, 0.86);
   --surface-solid: #fffdf9;
@@ -20,6 +21,7 @@
   --radius-md: 15px;
 }
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg: #20243a;
   --surface: rgba(42, 47, 69, 0.86);
   --surface-solid: #2a2f45;
@@ -209,6 +211,61 @@ button:active {
   color: #fffaf4;
   background: var(--violet);
 }
+.menu-divider {
+  height: 1px;
+  margin: 2px 0;
+  background: var(--line);
+}
+.menu-join {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+.menu-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  outline: none;
+  color: var(--ink);
+  background: var(--surface-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.menu-input::placeholder {
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.menu-input:focus {
+  border-color: var(--violet);
+  background: var(--surface-solid);
+}
+.menu-join .menu-item {
+  width: 100%;
+  text-align: center;
+}
+.menu-error {
+  padding: 2px 2px 0;
+  color: var(--accent-deep);
+  font-size: 10px;
+  font-weight: 600;
+}
+.room-badge {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .controls {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -258,6 +315,9 @@ button:active {
 #loadBtn {
   color: #fffaf4;
   background: var(--ink);
+}
+[data-theme="dark"] #loadBtn {
+  background: var(--accent);
 }
 #loadBtn:hover {
   color: #fff;
