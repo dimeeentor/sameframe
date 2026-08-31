@@ -88,7 +88,6 @@ export function createTransport(roomCode: RoomCode): Transport {
       stopPolling()
       sendClient({ type: "sync_request" })
     }
-    ws.onerror = () => {}
     ws.onclose = () => {
       setStatus("offline")
       startPolling()
