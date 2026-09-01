@@ -5,9 +5,9 @@ import { api } from "./api.ts"
 import { ws } from "./ws.ts"
 import { getLocalIP, startPublicTunnel } from "./tunnel.ts"
 
-// serveStatic resolves paths against the process cwd, but the old server was
-// module-relative — anchor to this file so the server works from any directory.
-// Assets come from the Svelte build (frontend/dist, produced by `deno task build:fe`).
+// serveStatic resolves paths against the process cwd. Anchor to this file so
+// the server works from any directory. Assets come from the Svelte build
+// (frontend/dist, produced by `deno task build:fe`).
 const DIST_ROOT = new URL("../frontend/dist", import.meta.url).pathname
 
 const app = new Hono()

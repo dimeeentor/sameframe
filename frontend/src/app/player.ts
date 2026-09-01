@@ -119,14 +119,13 @@ export function createPlayer(): Player {
             emit({ kind: "error", code: e.data })
           },
           onStateChange: (e) => {
-            const state =
-              e.data === YT.PlayerState.ENDED
-                ? "ended"
-                : e.data === YT.PlayerState.PLAYING
-                  ? "playing"
-                  : e.data === YT.PlayerState.PAUSED
-                    ? "paused"
-                    : "other"
+            const state = e.data === YT.PlayerState.ENDED
+              ? "ended"
+              : e.data === YT.PlayerState.PLAYING
+              ? "playing"
+              : e.data === YT.PlayerState.PAUSED
+              ? "paused"
+              : "other"
             emit({ kind: "state", state })
           },
           onPlaybackRateChange: (e) => emit({ kind: "rate", rate: e.data }),
@@ -154,10 +153,13 @@ export function createPlayer(): Player {
         console.warn("[sameframe] YT undefined after 4s — retrying iframe_api")
         const s = document.createElement("script")
         s.src = "https://www.youtube.com/iframe_api"
-        s.onerror = () => console.error("[sameframe] retry iframe_api load error")
+        s.onerror = () =>
+          console.error("[sameframe] retry iframe_api load error")
         document.head.appendChild(s)
       } else if (!yt) {
-        console.warn("[sameframe] YT defined but player null — retrying createPlayer")
+        console.warn(
+          "[sameframe] YT defined but player null — retrying createPlayer",
+        )
         create()
       }
     }, READY_RETRY_MS)
@@ -243,7 +245,9 @@ export function createPlayer(): Player {
     },
     isPlaying() {
       try {
-        return ready && yt ? yt.getPlayerState() === YT.PlayerState.PLAYING : false
+        return ready && yt
+          ? yt.getPlayerState() === YT.PlayerState.PLAYING
+          : false
       } catch {
         return false
       }
@@ -261,8 +265,8 @@ export function createPlayer(): Player {
       const el = document.getElementById("player")
       const found = el?.querySelector("iframe")
       const frame = found instanceof HTMLIFrameElement ? found : null
-      const target =
-        frame ?? (el instanceof HTMLIFrameElement ? el : (el?.parentElement ?? null))
+      const target = frame ??
+        (el instanceof HTMLIFrameElement ? el : (el?.parentElement ?? null))
       target?.requestFullscreen?.().catch(() => {})
     },
     onEvent(cb) {
