@@ -3,7 +3,7 @@ import { createSession } from "../app/session.ts"
 import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
 import { parseRoomCode } from "../app/domain.ts"
-import type { RoomCode, SyncSnapshot } from "../app/domain.ts"
+import type { RoomCode, SyncSnapshot, VideoId } from "../app/domain.ts"
 
 function getRoomFromUrl(): RoomCode | null {
   const v = new URLSearchParams(location.search).get("room")
@@ -30,6 +30,15 @@ async function ensureRoomCode(): Promise<RoomCode> {
 let _session: ReturnType<typeof createSession> | null = null
 let _code: RoomCode | null = getRoomFromUrl()
 
+type Session = ReturnType<typeof createSession>
+
+/** Run once the session exists; actions arriving during room boot are queued
+ *  on `ready` instead of throwing. */
+function whenReady(fn: (s: Session) => void) {
+  if (_session) fn(_session)
+  else void ready.then(() => { if (_session) fn(_session) })
+}
+
 export const view = $state<SyncSnapshot>({
   videoId: null,
   queue: [],
@@ -52,17 +61,11 @@ const ready: Promise<void> = (async () => {
   _session.start()
 })().catch((e) => console.error("[sameframe] room init failed", e))
 
-function getSession(): ReturnType<typeof createSession> {
-  if (!_session) throw new Error("session not ready yet")
-  return _session
-}
-
 export const session = {
   start() {},
   stop() { _session?.stop() },
   attachPlayer(host: HTMLElement) {
-    if (_session) _session.attachPlayer(host)
-    else void ready.then(() => _session!.attachPlayer(host))
+    whenReady((s) => s.attachPlayer(host))
   },
   subscribe(cb: (s: SyncSnapshot) => void) {
     if (_session) return _session.subscribe(cb)
@@ -70,14 +73,14 @@ export const session = {
     void ready.then(() => { off = _session!.subscribe(cb) })
     return () => off()
   },
-  loadVideo(id: Parameters<ReturnType<typeof createSession>["loadVideo"]>[0]) { getSession().loadVideo(id) },
-  addToQueue(id: Parameters<ReturnType<typeof createSession>["addToQueue"]>[0]) { getSession().addToQueue(id) },
-  removeFromQueue(i: number) { getSession().removeFromQueue(i) },
-  reorderQueue(a: number, b: number) { getSession().reorderQueue(a, b) },
-  clearQueue() { getSession().clearQueue() },
-  togglePlay() { getSession().togglePlay() },
-  seekBy(d: number) { getSession().seekBy(d) },
-  toggleFullscreen() { getSession().toggleFullscreen() },
+  loadVideo(id: VideoId) { whenReady((s) => s.loadVideo(id)) },
+  addToQueue(id: VideoId) { whenReady((s) => s.addToQueue(id)) },
+  removeFromQueue(i: number) { whenReady((s) => s.removeFromQueue(i)) },
+  reorderQueue(a: number, b: number) { whenReady((s) => s.reorderQueue(a, b)) },
+  clearQueue() { whenReady((s) => s.clearQueue()) },
+  togglePlay() { whenReady((s) => s.togglePlay()) },
+  seekBy(d: number) { whenReady((s) => s.seekBy(d)) },
+  toggleFullscreen() { whenReady((s) => s.toggleFullscreen()) },
   /** Create new room and navigate to it */
   async createNewRoom() {
     const res = await fetch("/api/rooms", { method: "POST" })

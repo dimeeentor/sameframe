@@ -26,27 +26,13 @@
       // Guards the iframe_api race: if the YT script finishes before the app
       // module, onYouTubeIframeAPIReady fires before player.ts exists. The app
       // registers window._ytAppReady and checks _ytReadySeen (load-bearing).
-      window._ytSyncLogs = []
-      window._ytLog = (...a) => {
-        console.log("[sameframe]", ...a)
-        window._ytSyncLogs.push(a.join(" "))
-      }
-      window._ytLog("page load", location.href, "host", location.host)
       window._ytReadySeen = false
       window.onYouTubeIframeAPIReady = () => {
         window._ytReadySeen = true
-        window._ytLog("YT API ready (inline stub), YT defined?", typeof YT !== "undefined")
         if (window._ytAppReady) window._ytAppReady()
       }
-      window.addEventListener("error", (e) =>
-        window._ytLog("window error", e.message, e.filename),
-      )
     </script>
-    <script
-      src="https://www.youtube.com/iframe_api"
-      onerror="window._ytLog('YT iframe_api load error')"
-      onload="window._ytLog('YT iframe_api script loaded')"
-    ></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

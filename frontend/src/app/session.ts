@@ -118,6 +118,9 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
     }
     s.videoId = videoId
     s.isPlaying = isPlaying
+    // YT reads 0 until the new video cues; without this the next tick sees a
+    // >1.5s jump from the old video and broadcasts a bogus seek(0)
+    suppress(1500)
     player.load(videoId, currentTime)
     if (isPlaying) retryMutedAutoplay(videoId)
     if (!isPlaying) {

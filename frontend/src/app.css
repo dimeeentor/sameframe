@@ -537,6 +537,14 @@ body.music #player {
   border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
   background: color-mix(in srgb, var(--accent) 9%, var(--surface-solid));
 }
+.qthumb-btn {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
 .qthumb {
   width: 62px;
   height: 40px;
