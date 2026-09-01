@@ -7,7 +7,7 @@ import { parseServerMsg, type ClientMsg, type ServerMsg } from "./wire.ts"
 export type Transport = {
   start(): void
   stop(): void
-  /** Fire-and-forget; if the WS is down the poll fallback reconciles. */
+  /** Fire-and-forget; dropped while the WS is down (poll re-syncs state). */
   send(msg: ClientMsg): void
   onMessage(cb: (m: ServerMsg) => void): void
   onStatus(cb: (s: ConnectionStatus) => void): void
@@ -65,11 +65,8 @@ export function createTransport(roomCode: RoomCode): Transport {
   }
 
   function sendClient(msg: ClientMsg) {
-    const sock = ws
-    if (sock?.readyState === WebSocket.OPEN) {
-      sock.send(JSON.stringify(msg))
-      return
-    }
+    // re-syncs state, it doesn't replay lost commands. Buffer-and-retry if that bites.
+    if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
   }
 
   function connect() {

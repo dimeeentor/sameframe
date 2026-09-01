@@ -177,12 +177,16 @@ export async function listRooms(): Promise<Array<RoomState & { clientCount: numb
 
 /**
  * Atomic read-modify-write with versionstamp check and retry.
- * Refreshes TTL on success. Returns updated state or null on not_found.
+ * Refreshes TTL on success. A mutator returning null (or the same state
+ * object) is a no-op: nothing written, `{ ok: false, reason: "noop" }` —
+ * callers must not broadcast from a no-op.
  */
 export async function mutateRoom(
   code: RoomCode,
   mutator: (s: RoomState) => RoomState | null,
-): Promise<{ ok: true; state: RoomState } | { ok: false; reason: "not_found" | "conflict" }> {
+): Promise<
+  { ok: true; state: RoomState } | { ok: false; reason: "not_found" | "conflict" | "noop" }
+> {
   const kv = await getKv()
   const key = kvKeys.roomState(code)
 
@@ -192,9 +196,8 @@ export async function mutateRoom(
       return { ok: false, reason: "not_found" }
     }
     const next = mutator(entry.value)
-    if (next === null) {
-      // no-op, treat as success with current state
-      return { ok: true, state: entry.value }
+    if (next === null || next === entry.value) {
+      return { ok: false, reason: "noop" }
     }
     const res = await kv.atomic()
       .check(entry)

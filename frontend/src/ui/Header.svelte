@@ -1,6 +1,7 @@
 <script lang="ts">
   import { view, session } from "../state/session.svelte"
   import { settings, setMusicMode, toggleTheme } from "../state/settings.svelte"
+  import { parseRoomCode } from "../app/domain"
 
   let copied = $state(false)
   let menuOpen = $state(false)
@@ -35,13 +36,13 @@
   }
 
   function doJoin() {
-    const v = joinCode.trim().toUpperCase()
-    if (!/^[A-Z0-9]{6}$/.test(v)) {
+    const parsed = parseRoomCode(joinCode)
+    if (!parsed) {
       joinError = "Enter 6-char code"
       return
     }
     joinError = ""
-    session.joinRoom(v)
+    session.joinRoom(parsed)
   }
 
   function newRoom() {

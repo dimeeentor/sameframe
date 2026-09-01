@@ -537,6 +537,14 @@ body.music #player {
   border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
   background: color-mix(in srgb, var(--accent) 9%, var(--surface-solid));
 }
+.qthumb-btn {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
 .qthumb {
   width: 62px;
   height: 40px;
@@ -587,51 +595,6 @@ body.music #player {
 }
 .empty.hidden {
   display: none;
-}
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 10px;
-  user-select: none;
-}
-.toggle input {
-  display: none;
-}
-.toggle-slider {
-  position: relative;
-  width: 30px;
-  height: 18px;
-  flex-shrink: 0;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-soft);
-  transition:
-    background 0.2s,
-    border-color 0.2s;
-}
-.toggle-slider::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--muted);
-  transition:
-    transform 0.2s,
-    background 0.2s;
-}
-.toggle input:checked + .toggle-slider {
-  border-color: var(--violet);
-  background: var(--violet);
-}
-.toggle input:checked + .toggle-slider::after {
-  transform: translateX(12px);
-  background: #fff;
 }
 .drag-handle {
   width: 18px;
@@ -785,9 +748,6 @@ kbd {
   body.music .player-wrap {
     min-height: 160px;
     aspect-ratio: 2/1;
-  }
-  .toggle-label {
-    display: none;
   }
   .shortcuts-wrap {
     right: 14px;
