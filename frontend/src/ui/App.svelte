@@ -26,9 +26,8 @@
     }
   })
 
-  // ensure titles for every queued video, not just the current one
+  // fetch titles for every queued video; reading view.queue registers the dependency
   $effect(() => {
-    // read length to subscribe to queue changes; reading items ensures titles for new ids
     const q = view.queue
     for (const id of q) ensureTitle(id)
   })
