@@ -57,14 +57,6 @@ auto-advances when a video ends, looping back around when it runs out.
 - If your host machine sleeps or the terminal closes, the session ends for
   everyone.
 
-## Stack
-
-Deno + Hono on the backend with native WebSockets; Svelte 5 (Vite build, run
-through Deno) in `frontend/`, served as static assets from `frontend/dist`. No
-node_modules at runtime — only at frontend build time. About as lightweight as
-this kind of thing gets. The frontend's design notes live in
-[frontend/DESIGN.md](frontend/DESIGN.md).
-
 ## License
 
 MIT. Runs entirely on your machine; nothing leaves your network except the
