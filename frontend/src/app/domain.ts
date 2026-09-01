@@ -1,8 +1,13 @@
-/** Domain types — no transport, no YT, no JSON. Validation enters here. */
+/** Domain types. No transport, no YT, no JSON. Validation enters here. */
 
-import { ROOM_CODE_RE, VIDEO_ID_RE, type RoomCode, type VideoId } from "../../../shared/messages.ts"
+import {
+  ROOM_CODE_RE,
+  type RoomCode,
+  VIDEO_ID_RE,
+  type VideoId,
+} from "../../../shared/messages.ts"
 
-export type { VideoId, RoomCode }
+export type { RoomCode, VideoId }
 
 /** Pure parser: raw 11-char id, youtu.be, ?v=, /embed|shorts|v/ paths, fallback regex. */
 export function parseVideoId(input: string): VideoId | null {
@@ -43,7 +48,7 @@ export type SyncSnapshot = {
   readonly roomCode: RoomCode | null
 }
 
-/** Share-link policy: room code is the only URL param. No ?v= anymore — video lives in KV. */
+/** Share-link policy: room code is the only URL param, since the video lives in room state. */
 export function composeShareUrl(
   publicUrl: string | null,
   roomCode: RoomCode | null,
