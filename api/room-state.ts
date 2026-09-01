@@ -81,7 +81,8 @@ export function applySeek(s: RoomState, currentTime: number): RoomState {
 }
 
 export function applyRate(s: RoomState, playbackRate: number): RoomState {
-  return { ...s, playbackRate }
+  // rebase: elapsed so far accrued at the old rate; the new one applies from now
+  return { ...s, playbackRate, currentTime: estimatedTime(s), updatedAt: Date.now() }
 }
 
 export function advanceTo(s: RoomState, index: number): RoomState | null {

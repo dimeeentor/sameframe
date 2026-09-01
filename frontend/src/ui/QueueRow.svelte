@@ -54,12 +54,13 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+<!-- click-to-play on the row is mouse convenience; the thumb button is the keyboard path -->
 <li
   class:active
   class:dragging
   onclick={(e) => {
-    if ((e.target as HTMLElement).closest(".qdel, .drag-handle")) return
+    if ((e.target as HTMLElement).closest(".qdel, .drag-handle, .qthumb-btn")) return
     onplay()
   }}
 >
@@ -72,7 +73,17 @@
   >
     ⠿
   </button>
-  <img class="qthumb" src={thumb(id)} loading="lazy" alt="" />
+  <button
+    class="qthumb-btn"
+    type="button"
+    title="Play"
+    onclick={(e) => {
+      e.stopPropagation()
+      onplay()
+    }}
+  >
+    <img class="qthumb" src={thumb(id)} loading="lazy" alt="" />
+  </button>
   <div class="qtitle">{titleOf(id)}</div>
   <button
     class="qdel"

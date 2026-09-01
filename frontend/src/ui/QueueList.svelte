@@ -11,9 +11,9 @@
       <span>{view.queue.length ? `(${view.queue.length})` : ""}</span>
     </h3>
     <div class="queue-actions">
-      <!-- visual only: the server always loops the queue -->
-      <label class="toggle">
-        <input type="checkbox" checked />
+      <!-- status light, not a control: the server always loops the queue -->
+      <label class="toggle" title="The queue always loops">
+        <input type="checkbox" checked disabled />
         <span class="toggle-slider"></span>
         <span class="toggle-label">Loop queue</span>
       </label>

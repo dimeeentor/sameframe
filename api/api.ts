@@ -3,6 +3,7 @@ import { type Context, Hono } from "hono"
 import { publicUrl } from "./state.ts"
 import { createRoom, getRoomState, isValidCode, listRooms } from "./rooms.ts"
 import { getSyncPayload } from "./room-state.ts"
+import { VIDEO_ID_RE } from "../shared/messages.ts"
 import type { RoomCode } from "../shared/messages.ts"
 
 const api = new Hono()
@@ -12,9 +13,11 @@ api.get("/public-url", (c) => c.json({ url: publicUrl }))
 // Debug: list all non-expired rooms (local only — 403 on deployed non-local host)
 // Useful to inspect KV: curl http://localhost:8000/api/rooms
 api.get("/rooms", async (c) => {
-  const host = c.req.header("host") ?? ""
-  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1")
-  if (!isLocal) return c.json({ error: "not available" }, 403)
+  // exact hostname match — a spoofed "Host: localhost.evil.com" must not pass
+  const hostname = new URL(`http://${c.req.header("host") ?? "x"}`).hostname
+  if (hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "[::1]") {
+    return c.json({ error: "not available" }, 403)
+  }
   const rooms = await listRooms()
   return c.json(
     rooms.map((r) => ({
@@ -55,13 +58,13 @@ api.get("/sync", async (c) => {
 async function getTitle(c: Context) {
   const url = new URL(c.req.url)
   const id = url.searchParams.get("id") || url.searchParams.get("v")
-  if (!id || !/^[a-zA-Z0-9_-]{11}$/.test(id)) {
+  if (!id || !VIDEO_ID_RE.test(id)) {
     return c.json({ error: "invalid id" }, 400)
   }
   try {
     const r = await fetch(
       `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`,
-      { headers: { "User-Agent": "Sameframe/1.0" } },
+      { headers: { "User-Agent": "Sameframe/1.0" }, signal: AbortSignal.timeout(5000) },
     )
     if (!r.ok) {
       return c.json({ id, title: id })
