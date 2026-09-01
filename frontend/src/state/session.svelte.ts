@@ -1,4 +1,4 @@
-/** Reactive boundary — owns room boot (create-or-join via ?room=). No legacy default room. */
+/** Reactive boundary — owns room boot (create-or-join via ?room=) */
 import { createSession } from "../app/session.ts"
 import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
