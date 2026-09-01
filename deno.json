@@ -2,9 +2,17 @@
   "imports": {
     "hono": "npm:hono@^4"
   },
-  "unstable": ["kv"],
+  "unstable": [
+    "kv"
+  ],
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "deno.ns", "deno.window", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "deno.ns",
+      "deno.window",
+      "esnext"
+    ],
     "strict": true
   },
   "tasks": {
@@ -16,5 +24,8 @@
     "start": "deno task build:fe && deno run --allow-net --allow-read --allow-sys --unstable-kv api/server.ts",
     "share": "deno task build:fe && deno run --allow-net --allow-read --allow-run --allow-sys --allow-env --unstable-kv api/server.ts --public",
     "check": "deno check --unstable-kv api/*.ts shared/*.ts && cd frontend && deno check src/app/*.ts src/state/*.svelte.ts"
+  },
+  "fmt": {
+    "semiColons": false
   }
 }
