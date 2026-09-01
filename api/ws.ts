@@ -138,14 +138,11 @@ ws.get("/ws/:code", (c) => {
               return applyQueueAdd(s, msg.videoId)
             })
             if (!addRes.ok) return
-            // only broadcast queue if we actually added
-            if (before.queue.length !== addRes.state.queue.length) {
-              broadcastToRoom(roomCode, {
-                type: "queue",
-                queue: addRes.state.queue,
-                queueIndex: addRes.state.queueIndex,
-              })
-            }
+            broadcastToRoom(roomCode, {
+              type: "queue",
+              queue: addRes.state.queue,
+              queueIndex: addRes.state.queueIndex,
+            })
             if (wasEmpty) {
               const loadRes = await mutateRoom(roomCode, (s) => applyLoad(s, msg.videoId))
               if (!loadRes.ok) return
@@ -222,8 +219,6 @@ ws.get("/ws/:code", (c) => {
               applyQueueReorder(s, msg.from, msg.to)
             )
             if (!res.ok) return
-            // no-op check: queue unchanged
-            if (res.state.queue.length === 0) break
             broadcastToRoom(roomCode, {
               type: "queue",
               queue: res.state.queue,
@@ -256,12 +251,9 @@ ws.get("/ws/:code", (c) => {
             break
           }
           case "ended": {
-            const res = await mutateRoom(roomCode, (s) => {
-              const next = handleEnded(s)
-              return next ?? null
-            })
+            // no next video → noop → ok:false → nothing broadcast (no restart)
+            const res = await mutateRoom(roomCode, handleEnded)
             if (!res.ok) return
-            // find which index we advanced to
             broadcastToRoom(roomCode, {
               type: "load",
               videoId: res.state.videoId!,
