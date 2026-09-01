@@ -96,6 +96,20 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
     s.queueIndex = queueIndex
   }
 
+  // A remote load can arrive with no user activation (second client, fresh
+  // join), so the browser blocks unmuted autoplay and the iframe sticks on
+  // YT's "click to start" overlay. Muted playback is always allowed: retry
+  // muted after a beat and restore sound on the user's first input.
+  function retryMutedAutoplay(videoId: VideoId) {
+    setTimeout(() => {
+      if (s.videoId !== videoId || !s.isPlaying || player.isPlaying()) return
+      suppress(800)
+      player.mute()
+      player.play()
+      document.addEventListener("pointerdown", () => player.unMute(), { once: true })
+    }, 1000)
+  }
+
   function applyRemoteVideo(videoId: VideoId, currentTime: number, isPlaying: boolean) {
     // own echo of our optimistic load — player is already on this video
     if (videoId === s.videoId) {
@@ -105,6 +119,7 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
     s.videoId = videoId
     s.isPlaying = isPlaying
     player.load(videoId, currentTime)
+    if (isPlaying) retryMutedAutoplay(videoId)
     if (!isPlaying) {
       if (pauseAfterLoad) clearTimeout(pauseAfterLoad)
       pauseAfterLoad = setTimeout(() => {
@@ -290,6 +305,11 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
 
   function togglePlay() {
     if (!player.isReady() || !s.videoId) return
+    // first input after a muted-autoplay start restores sound instead of pausing
+    if (player.isMuted()) {
+      player.unMute()
+      return
+    }
     const t = player.currentTime()
     suppress(800)
     if (s.isPlaying) {

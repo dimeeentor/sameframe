@@ -35,6 +35,9 @@ interface YTPlayer {
   seekTo(s: number, allowSeekAhead: boolean): void
   playVideo(): void
   pauseVideo(): void
+  mute(): void
+  unMute(): void
+  isMuted(): boolean
   setPlaybackRate(rate: number): void
 }
 
@@ -58,6 +61,9 @@ export type Player = {
   load(id: VideoId, startAt: number): void
   play(): void
   pause(): void
+  mute(): void
+  unMute(): void
+  isMuted(): boolean
   seek(t: number): void
   setRate(rate: number): void
   currentTime(): number
@@ -192,6 +198,27 @@ export function createPlayer(): Player {
           p.pauseVideo()
         } catch {}
       })
+    },
+    mute() {
+      whenReady((p) => {
+        try {
+          p.mute()
+        } catch {}
+      })
+    },
+    unMute() {
+      whenReady((p) => {
+        try {
+          p.unMute()
+        } catch {}
+      })
+    },
+    isMuted() {
+      try {
+        return ready && yt ? yt.isMuted() : false
+      } catch {
+        return false
+      }
     },
     seek(t) {
       whenReady((p) => {
