@@ -1,12 +1,19 @@
-/** THE deep module: sync policy. Owns the reduction of server messages into
+/** Sync policy. Owns the reduction of server messages into
  *  state, optimistic commands, suppression windows, drift correction, and the
- *  400ms tick. Plain TS — testable with fake transport/player, no DOM, no Svelte.
+ *  400ms tick. Plain TS, testable with fake transport/player, no DOM, no Svelte.
  *
  *  Key invariant: the server broadcasts `load`/`queue` back to their sender, so
  *  the reducer must be idempotent under own-echo (a `load` for the video we
- *  already loaded must NOT reload the player — that restarts playback). */
-import { composeShareUrl, type ConnectionStatus, type RoomCode, type SyncSnapshot, type VideoId } from "./domain.ts"
+ *  already loaded must NOT reload the player, since that restarts playback). */
+import {
+  composeShareUrl,
+  type ConnectionStatus,
+  type RoomCode,
+  type SyncSnapshot,
+  type VideoId,
+} from "./domain.ts"
 import type { ClientMsg, ServerMsg } from "./wire.ts"
+import { enqueue, moveTo, removeAt } from "../../../shared/queue.ts"
 import type { Player, PlayerEvent } from "./player.ts"
 import type { Transport } from "./transport.ts"
 
@@ -45,7 +52,11 @@ const PUBLIC_URL_POLL_MS = 5000
 const DRIFT_LIMIT = 1.2
 const USER_SEEK_JUMP = 1.5
 
-export function createSession(transport: Transport, player: Player, roomCode: RoomCode): Session {
+export function createSession(
+  transport: Transport,
+  player: Player,
+  roomCode: RoomCode,
+): Session {
   const s: SessionState = {
     videoId: null,
     queue: [],
@@ -106,12 +117,18 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
       suppress(800)
       player.mute()
       player.play()
-      document.addEventListener("pointerdown", () => player.unMute(), { once: true })
+      document.addEventListener("pointerdown", () => player.unMute(), {
+        once: true,
+      })
     }, 1000)
   }
 
-  function applyRemoteVideo(videoId: VideoId, currentTime: number, isPlaying: boolean) {
-    // own echo of our optimistic load — player is already on this video
+  function applyRemoteVideo(
+    videoId: VideoId,
+    currentTime: number,
+    isPlaying: boolean,
+  ) {
+    // own echo of our optimistic load, the player is already on this video
     if (videoId === s.videoId) {
       correctDrift(currentTime, isPlaying)
       return
@@ -273,28 +290,27 @@ export function createSession(transport: Transport, player: Player, roomCode: Ro
 
   function addToQueue(id: VideoId) {
     const wasEmpty = s.queue.length === 0 && !s.videoId
-    if (!s.queue.includes(id)) s.queue = [...s.queue, id]
+    const added = enqueue(s, id)
+    if (added !== s) s.queue = added.queue
     publish()
     send({ type: "queue_add", videoId: id })
     if (wasEmpty) loadVideo(id)
   }
 
   function removeFromQueue(index: number) {
-    if (index < 0 || index >= s.queue.length) return
-    s.queue = s.queue.filter((_, i) => i !== index)
-    if (s.queueIndex >= s.queue.length) s.queueIndex = s.queue.length - 1
+    const removed = removeAt(s, index)
+    if (removed === s) return
+    s.queue = removed.queue
+    s.queueIndex = removed.queueIndex
     publish()
     send({ type: "queue_remove", index })
   }
 
   function reorderQueue(from: number, to: number) {
-    if (from === to || from < 0 || from >= s.queue.length) return
-    const next = [...s.queue]
-    const [id] = next.splice(from, 1)
-    if (!id) return
-    next.splice(to, 0, id)
-    s.queue = next
-    s.queueIndex = s.videoId ? next.indexOf(s.videoId) : -1
+    const moved = moveTo(s, from, to)
+    if (moved === s) return
+    s.queue = moved.queue
+    s.queueIndex = moved.queueIndex
     publish()
     send({ type: "queue_reorder", from, to })
   }

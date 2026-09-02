@@ -5,7 +5,6 @@ let kvInstance: Deno.Kv | null = null
 
 export async function getKv(): Promise<Deno.Kv> {
   if (kvInstance) return kvInstance
-  // requires --unstable-kv
   kvInstance = await Deno.openKv()
   return kvInstance
 }

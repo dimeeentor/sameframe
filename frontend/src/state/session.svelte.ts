@@ -1,4 +1,4 @@
-/** Reactive boundary — owns room boot (create-or-join via ?room=) */
+/** Reactive boundary. Owns room boot (create-or-join via ?room=). */
 import { createSession } from "../app/session.ts"
 import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
@@ -15,7 +15,7 @@ async function ensureRoomCode(): Promise<RoomCode> {
   const existing = getRoomFromUrl()
   if (existing) return existing
 
-  // no ?room= — create one and rewrite URL
+  // no ?room=, so create one and rewrite the URL
   const res = await fetch("/api/rooms", { method: "POST" })
   if (!res.ok) throw new Error("failed to create room")
   const data = (await res.json()) as { code: string }
@@ -36,7 +36,9 @@ type Session = ReturnType<typeof createSession>
  *  on `ready` instead of throwing. */
 function whenReady(fn: (s: Session) => void) {
   if (_session) fn(_session)
-  else void ready.then(() => { if (_session) fn(_session) })
+  else {void ready.then(() => {
+      if (_session) fn(_session)
+    })}
 }
 
 export const view = $state<SyncSnapshot>({
@@ -63,36 +65,56 @@ const ready: Promise<void> = (async () => {
 
 export const session = {
   start() {},
-  stop() { _session?.stop() },
+  stop() {
+    _session?.stop()
+  },
   attachPlayer(host: HTMLElement) {
     whenReady((s) => s.attachPlayer(host))
   },
   subscribe(cb: (s: SyncSnapshot) => void) {
     if (_session) return _session.subscribe(cb)
     let off: () => void = () => {}
-    void ready.then(() => { off = _session!.subscribe(cb) })
+    void ready.then(() => {
+      off = _session!.subscribe(cb)
+    })
     return () => off()
   },
-  loadVideo(id: VideoId) { whenReady((s) => s.loadVideo(id)) },
-  addToQueue(id: VideoId) { whenReady((s) => s.addToQueue(id)) },
-  removeFromQueue(i: number) { whenReady((s) => s.removeFromQueue(i)) },
-  reorderQueue(a: number, b: number) { whenReady((s) => s.reorderQueue(a, b)) },
-  clearQueue() { whenReady((s) => s.clearQueue()) },
-  togglePlay() { whenReady((s) => s.togglePlay()) },
-  seekBy(d: number) { whenReady((s) => s.seekBy(d)) },
-  toggleFullscreen() { whenReady((s) => s.toggleFullscreen()) },
-  /** Create new room and navigate to it */
+  loadVideo(id: VideoId) {
+    whenReady((s) => s.loadVideo(id))
+  },
+  addToQueue(id: VideoId) {
+    whenReady((s) => s.addToQueue(id))
+  },
+  removeFromQueue(i: number) {
+    whenReady((s) => s.removeFromQueue(i))
+  },
+  reorderQueue(a: number, b: number) {
+    whenReady((s) => s.reorderQueue(a, b))
+  },
+  clearQueue() {
+    whenReady((s) => s.clearQueue())
+  },
+  togglePlay() {
+    whenReady((s) => s.togglePlay())
+  },
+  seekBy(d: number) {
+    whenReady((s) => s.seekBy(d))
+  },
+  toggleFullscreen() {
+    whenReady((s) => s.toggleFullscreen())
+  },
   async createNewRoom() {
     const res = await fetch("/api/rooms", { method: "POST" })
     if (!res.ok) throw new Error("failed to create room")
     const data = (await res.json()) as { code: string }
     location.href = `${location.origin}/?room=${data.code}`
   },
-  /** Join existing room by code */
   joinRoom(code: string) {
     const parsed = parseRoomCode(code)
     if (!parsed) throw new Error("invalid room code")
     location.href = `${location.origin}/?room=${parsed}`
   },
-  get roomCode() { return _code },
+  get roomCode() {
+    return _code
+  },
 }
