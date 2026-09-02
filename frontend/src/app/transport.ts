@@ -2,7 +2,7 @@
  *  Nothing downstream can tell which transport produced a message.
  *  Room-aware: connects to /ws/:code and polls /api/sync?room=CODE. */
 import type { ConnectionStatus, RoomCode } from "./domain.ts"
-import { parseServerMsg, type ClientMsg, type ServerMsg } from "./wire.ts"
+import { type ClientMsg, parseServerMsg, type ServerMsg } from "./wire.ts"
 
 export type Transport = {
   start(): void
@@ -65,7 +65,6 @@ export function createTransport(roomCode: RoomCode): Transport {
   }
 
   function sendClient(msg: ClientMsg) {
-    // re-syncs state, it doesn't replay lost commands. Buffer-and-retry if that bites.
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
   }
 

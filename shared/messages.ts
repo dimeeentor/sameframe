@@ -1,4 +1,4 @@
-/** Wire protocol shared by the API and the frontend — one definition so the
+/** Wire protocol shared by the API and the frontend. One definition so the
  *  two sides cannot drift. Owns the VideoId brand, both message unions, and
  *  the boundary parsers that turn unknown JSON into validated messages.
  *  Importers trust the types; `Record<string, unknown>` stops here. */
@@ -13,6 +13,10 @@ export type RoomCode = string & { readonly [__roomCode]: true }
 
 export const ROOM_CODE_RE = /^[A-Z0-9]{6}$/
 
+export function isRoomCode(v: string): v is RoomCode {
+  return ROOM_CODE_RE.test(v)
+}
+
 export type RoomMetadata = {
   code: RoomCode
   createdAt: number
@@ -22,24 +26,24 @@ export type ServerMsg =
   | { type: "clients"; count: number }
   | { type: "public_url"; url: string }
   | {
-      type: "load"
-      videoId: VideoId
-      currentTime: number
-      isPlaying: boolean
-      queue: VideoId[]
-      queueIndex: number
-    }
+    type: "load"
+    videoId: VideoId
+    currentTime: number
+    isPlaying: boolean
+    queue: VideoId[]
+    queueIndex: number
+  }
   | { type: "queue"; queue: VideoId[]; queueIndex: number }
   | {
-      type: "sync"
-      videoId: VideoId | null
-      currentTime: number
-      isPlaying: boolean
-      playbackRate: number
-      queue: VideoId[]
-      queueIndex: number
-      publicUrl: string | null
-    }
+    type: "sync"
+    videoId: VideoId | null
+    currentTime: number
+    isPlaying: boolean
+    playbackRate: number
+    queue: VideoId[]
+    queueIndex: number
+    publicUrl: string | null
+  }
   | { type: "play"; currentTime: number }
   | { type: "pause"; currentTime: number }
   | { type: "seek"; currentTime: number }
@@ -64,7 +68,9 @@ function asId(v: unknown): VideoId | null {
 
 function asQueue(v: unknown): VideoId[] {
   if (!Array.isArray(v)) return []
-  return v.filter((x): x is VideoId => typeof x === "string" && VIDEO_ID_RE.test(x))
+  return v.filter((x): x is VideoId =>
+    typeof x === "string" && VIDEO_ID_RE.test(x)
+  )
 }
 
 function num(v: unknown, fallback: number): number {
@@ -86,7 +92,9 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
         ? { type: "clients", count: m.count }
         : null
     case "public_url":
-      return typeof m.url === "string" ? { type: "public_url", url: m.url } : null
+      return typeof m.url === "string"
+        ? { type: "public_url", url: m.url }
+        : null
     case "load": {
       const videoId = asId(m.videoId)
       if (!videoId) return null

@@ -5,7 +5,7 @@ export type Theme = "light" | "dark"
 
 /** The pre-rewrite app persisted its system-preference fallback under
  *  "yt-theme" on every load, so that key can hold a value the user never
- *  chose — a fresh key holds explicit choices only. */
+ *  chose. A fresh key holds explicit choices only. */
 const THEME_KEY = "sameframe-theme"
 
 function parseTheme(v: string | null): Theme | null {

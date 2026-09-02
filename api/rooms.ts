@@ -1,77 +1,23 @@
 /// <reference lib="deno.unstable" />
-/** Room persistence via Deno KV. Code is the sole identity — 6-char uppercase alphanum.
- *  Every room row has 24h TTL refreshed on each mutation. */
-
+/** Room persistence via Deno KV. Code is the sole identity, a 6-char uppercase
+ *  alphanum. Every room row has a 24h TTL refreshed on each mutation. */
 import { getKv, kvKeys, ROOM_TTL_MS } from "./kv.ts"
-import type { RoomCode, RoomMetadata, VideoId } from "../shared/messages.ts"
-import { ROOM_CODE_RE } from "../shared/messages.ts"
+import type { RoomCode, RoomMetadata } from "../shared/messages.ts"
+import { emptyRoomState, type RoomState } from "./room-state.ts"
+import { clientCount } from "./presence.ts"
 
-export type { RoomCode, RoomMetadata }
-
-export type RoomState = {
-  code: RoomCode
-  createdAt: number
-  videoId: VideoId | null
-  currentTime: number
-  isPlaying: boolean
-  playbackRate: number
-  updatedAt: number
-  queue: VideoId[]
-  queueIndex: number
-}
-
-// in-memory client registry — ephemeral, not in KV
-const roomClients = new Map<string, Set<WebSocket>>()
-
-export function addClientToRoom(code: RoomCode, ws: WebSocket): void {
-  let set = roomClients.get(code)
-  if (!set) {
-    set = new Set()
-    roomClients.set(code, set)
-  }
-  set.add(ws)
-}
-
-export function removeClientFromRoom(code: RoomCode, ws: WebSocket): void {
-  const set = roomClients.get(code)
-  if (!set) return
-  set.delete(ws)
-  if (set.size === 0) roomClients.delete(code)
-}
-
-function pruneRoom(code: RoomCode): void {
-  const set = roomClients.get(code)
-  if (!set) return
-  for (const ws of set) {
-    if (ws.readyState !== WebSocket.OPEN) {
-      set.delete(ws)
-    }
-  }
-  if (set.size === 0) roomClients.delete(code)
-}
-
-export function getRoomClientCount(code: RoomCode): number {
-  pruneRoom(code)
-  return roomClients.get(code)?.size ?? 0
-}
-
-export function broadcastToRoom(code: RoomCode, msg: unknown, exclude?: WebSocket): void {
-  pruneRoom(code)
-  const set = roomClients.get(code)
-  if (!set) return
-  const data = JSON.stringify(msg)
-  for (const ws of set) {
-    if (ws.readyState === WebSocket.OPEN && ws !== exclude) {
-      ws.send(data)
-    }
-  }
+function isRoomState(v: unknown): v is RoomState {
+  if (typeof v !== "object" || v === null) return false
+  const o = v as Record<string, unknown>
+  return typeof o.code === "string" && typeof o.createdAt === "number" &&
+    Array.isArray(o.queue)
 }
 
 // --- code generation ---
 
 const CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-export function generateRoomCode(): RoomCode {
+function generateRoomCode(): RoomCode {
   let s = ""
   const bytes = new Uint8Array(6)
   crypto.getRandomValues(bytes)
@@ -81,42 +27,17 @@ export function generateRoomCode(): RoomCode {
   return s as RoomCode
 }
 
-export function isValidCode(v: string): v is RoomCode {
-  return ROOM_CODE_RE.test(v)
-}
+// --- KV access ---
 
-// --- KV helpers ---
-
-function emptyState(code: RoomCode): RoomState {
-  const now = Date.now()
-  return {
-    code,
-    createdAt: now,
-    videoId: null,
-    currentTime: 0,
-    isPlaying: false,
-    playbackRate: 1,
-    updatedAt: now,
-    queue: [],
-    queueIndex: -1,
-  }
-}
-
-function isRoomState(v: unknown): v is RoomState {
-  if (typeof v !== "object" || v === null) return false
-  const o = v as Record<string, unknown>
-  return typeof o.code === "string" && typeof o.createdAt === "number" && Array.isArray(o.queue)
-}
-
-/** Ensure room exists — creates empty state if missing. Returns state. */
+/** Ensure room exists, creating empty state if missing. */
 export async function ensureRoom(code: RoomCode): Promise<RoomState> {
   const kv = await getKv()
   const key = kvKeys.roomState(code)
   const existing = await kv.get<RoomState>(key)
   if (existing.value && isRoomState(existing.value)) return existing.value
 
-  const state = emptyState(code)
-  // best-effort create — if race, the other writer wins and we return theirs
+  const state = emptyRoomState(code)
+  // best-effort create. If a race happens, the other writer wins and we return theirs
   const res = await kv.atomic()
     .check(existing)
     .set(key, state, { expireIn: ROOM_TTL_MS })
@@ -135,13 +56,6 @@ export async function getRoomState(code: RoomCode): Promise<RoomState | null> {
   return res.value
 }
 
-export async function roomExists(code: string): Promise<boolean> {
-  if (!isValidCode(code)) return false
-  const kv = await getKv()
-  const res = await kv.get(kvKeys.roomState(code as RoomCode))
-  return res.value !== null
-}
-
 /** Create a new room with unique code. Retries on collision. */
 export async function createRoom(): Promise<RoomMetadata> {
   const kv = await getKv()
@@ -151,7 +65,7 @@ export async function createRoom(): Promise<RoomMetadata> {
     const existing = await kv.get(key)
     if (existing.value !== null) continue // collision, retry
 
-    const state = emptyState(code)
+    const state = emptyRoomState(code)
     const res = await kv.atomic()
       .check(existing)
       .set(key, state, { expireIn: ROOM_TTL_MS })
@@ -163,14 +77,16 @@ export async function createRoom(): Promise<RoomMetadata> {
   throw new Error("failed to generate unique room code")
 }
 
-export async function listRooms(): Promise<Array<RoomState & { clientCount: number }>> {
+export async function listRooms(): Promise<
+  Array<RoomState & { clientCount: number }>
+> {
   const kv = await getKv()
   const out: Array<RoomState & { clientCount: number }> = []
   for await (const entry of kv.list<RoomState>({ prefix: ["rooms"] })) {
     if (!isRoomState(entry.value)) continue
-    // key is ["rooms", code, "state"] — filter only state rows
+    // key is ["rooms", code, "state"], so filter only state rows
     if (entry.key.length !== 3 || entry.key[2] !== "state") continue
-    out.push({ ...entry.value, clientCount: getRoomClientCount(entry.value.code) })
+    out.push({ ...entry.value, clientCount: clientCount(entry.value.code) })
   }
   return out
 }
@@ -178,14 +94,17 @@ export async function listRooms(): Promise<Array<RoomState & { clientCount: numb
 /**
  * Atomic read-modify-write with versionstamp check and retry.
  * Refreshes TTL on success. A mutator returning null (or the same state
- * object) is a no-op: nothing written, `{ ok: false, reason: "noop" }` —
- * callers must not broadcast from a no-op.
+ * object) is a no-op: nothing written, `{ ok: false, reason: "noop" }`.
+ * Callers must not broadcast from a no-op.
  */
 export async function mutateRoom(
   code: RoomCode,
   mutator: (s: RoomState) => RoomState | null,
 ): Promise<
-  { ok: true; state: RoomState } | { ok: false; reason: "not_found" | "conflict" | "noop" }
+  { ok: true; state: RoomState } | {
+    ok: false
+    reason: "not_found" | "conflict" | "noop"
+  }
 > {
   const kv = await getKv()
   const key = kvKeys.roomState(code)
@@ -204,7 +123,7 @@ export async function mutateRoom(
       .set(key, next, { expireIn: ROOM_TTL_MS })
       .commit()
     if (res.ok) return { ok: true, state: next }
-    // versionstamp conflict — retry
+    // versionstamp conflict, retry
   }
   return { ok: false, reason: "conflict" }
 }

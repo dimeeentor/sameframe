@@ -51,7 +51,6 @@ async function startSshTunnel() {
     stderr: "piped",
   })
   const child = cmd.spawn()
-
   ;(async () => {
     const decoder = new TextDecoder()
     const reader = child.stdout.getReader()

@@ -7,30 +7,29 @@
     <link rel="apple-touch-icon" href="/icon.png" />
     <title>Sameframe</title>
     <script>
-      // Pre-paint theme (must mirror settings.svelte.ts): explicit choice wins,
-      // else system preference. Prevents a light flash in dark mode.
-      {
-        const t = localStorage.getItem("sameframe-theme")
-        document.documentElement.dataset.theme =
-          t === "light" || t === "dark"
-            ? t
-            : matchMedia("(prefers-color-scheme: light)").matches
-              ? "light"
-              : "dark"
-      }
+    // Pre-paint theme (must mirror settings.svelte.ts): explicit choice wins,
+    // else system preference. Prevents a light flash in dark mode.
+    {
+      const t = localStorage.getItem("sameframe-theme")
+      document.documentElement.dataset.theme = t === "light" || t === "dark"
+        ? t
+        : matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark"
+    }
     </script>
   </head>
   <body>
     <div id="app"></div>
     <script>
-      // Guards the iframe_api race: if the YT script finishes before the app
-      // module, onYouTubeIframeAPIReady fires before player.ts exists. The app
-      // registers window._ytAppReady and checks _ytReadySeen (load-bearing).
-      window._ytReadySeen = false
-      window.onYouTubeIframeAPIReady = () => {
-        window._ytReadySeen = true
-        if (window._ytAppReady) window._ytAppReady()
-      }
+    // Guards the iframe_api race: if the YT script finishes before the app
+    // module, onYouTubeIframeAPIReady fires before player.ts exists. The app
+    // registers window._ytAppReady and checks _ytReadySeen (load-bearing).
+    window._ytReadySeen = false
+    window.onYouTubeIframeAPIReady = () => {
+      window._ytReadySeen = true
+      if (window._ytAppReady) window._ytAppReady()
+    }
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script type="module" src="/src/main.ts"></script>
