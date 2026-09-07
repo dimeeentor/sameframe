@@ -110,17 +110,30 @@ export function createSession(
   // A remote load can arrive with no user activation (second client, fresh
   // join), so the browser blocks unmuted autoplay and the iframe sticks on
   // YT's "click to start" overlay. Muted playback is always allowed: retry
-  // muted after a beat and restore sound on the user's first input.
+  // muted a few times (cold iframes often aren't ready at the first beat)
+  // and restore sound on the user's first input.
+  let unmuteArmed = false
+  function armUnmute() {
+    if (unmuteArmed) return
+    unmuteArmed = true
+    const restore = () => {
+      unmuteArmed = false
+      player.unMute()
+    }
+    document.addEventListener("pointerdown", restore, { once: true })
+    document.addEventListener("keydown", restore, { once: true })
+  }
+
   function retryMutedAutoplay(videoId: VideoId) {
-    setTimeout(() => {
-      if (s.videoId !== videoId || !s.isPlaying || player.isPlaying()) return
-      suppress(800)
-      player.mute()
-      player.play()
-      document.addEventListener("pointerdown", () => player.unMute(), {
-        once: true,
-      })
-    }, 1000)
+    for (const delay of [1000, 2500, 4000]) {
+      setTimeout(() => {
+        if (s.videoId !== videoId || !s.isPlaying || player.isPlaying()) return
+        suppress(800)
+        player.mute()
+        player.play()
+        armUnmute()
+      }, delay)
+    }
   }
 
   function applyRemoteVideo(

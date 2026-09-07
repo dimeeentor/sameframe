@@ -175,8 +175,10 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         return loadSurvivor(s, msg.index)
       }
       const removed = removeAt(s, msg.index)
+      // empty queue keeps the current video playing (same as queue_clear),
+      // so a reload still restores it instead of showing the splash screen
       const next = removed.queue.length === 0
-        ? { ...removed, videoId: null, queueIndex: -1 }
+        ? { ...removed, queueIndex: -1 }
         : removed
       return { next, effects: [{ kind: "broadcast", msg: queueMsg(next) }] }
     }

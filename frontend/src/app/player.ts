@@ -101,6 +101,9 @@ export function createPlayer(): Player {
           rel: 0,
           enablejsapi: 1,
           playsinline: 1,
+          autoplay: 1,
+          iv_load_policy: 3,
+          hl: navigator.language.split("-")[0],
           origin: location.origin,
         },
         events: {
