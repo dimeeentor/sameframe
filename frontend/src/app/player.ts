@@ -42,11 +42,9 @@ interface YTPlayer {
 }
 
 declare global {
-  interface Window {
-    onYouTubeIframeAPIReady?: () => void
-    _ytAppReady?: () => void
-    _ytReadySeen?: boolean
-  }
+  var onYouTubeIframeAPIReady: (() => void) | undefined
+  var _ytAppReady: (() => void) | undefined
+  var _ytReadySeen: boolean | undefined
 }
 
 export type PlayerEvent =
@@ -89,6 +87,17 @@ export function createPlayer(): Player {
     else pending.push(fn)
   }
 
+  /** YT calls can throw if the iframe is mid-teardown; nothing to recover. */
+  function safely(fn: (p: YTPlayer) => void) {
+    return (p: YTPlayer) => {
+      try {
+        fn(p)
+      } catch {
+        // ignored, see doc comment above
+      }
+    }
+  }
+
   function create() {
     if (yt || !host) return
     try {
@@ -102,11 +111,7 @@ export function createPlayer(): Player {
           enablejsapi: 1,
           playsinline: 1,
           autoplay: 1,
-          // muted so a remote play, which carries no local gesture, is allowed
-          // to start at all; the session restores sound on the first interaction
           mute: 1,
-          // YT's own `f` fullscreens the player from inside the frame, which
-          // hides its controls; the page owns the shortcuts (see reclaimFocus)
           disablekb: 1,
           iv_load_policy: 3,
           hl: navigator.language.split("-")[0],
@@ -149,8 +154,6 @@ export function createPlayer(): Player {
     create()
   }
 
-  /** YT replaces the #player div with its iframe, keeping the id, so the frame
-   *  is that element — or, on API builds that nest it, a child of it. */
   function frameEl(): HTMLIFrameElement | null {
     const el = document.getElementById("player")
     if (el instanceof HTMLIFrameElement) return el
@@ -158,24 +161,18 @@ export function createPlayer(): Player {
     return found instanceof HTMLIFrameElement ? found : null
   }
 
-  // Clicking the video focuses the iframe, and since it is cross-origin every
-  // later keystroke belongs to YouTube: the page's shortcuts go dead. Those
-  // keys cannot be intercepted from out here, so take focus back instead.
-  // Pointer events hit the frame by position, not focus, so the mouse still
-  // drives the player normally.
   function reclaimFocus() {
     const frame = frameEl()
     if (frame && document.activeElement === frame) frame.blur()
   }
 
   function handshake() {
-    // activeElement can lag the blur event by a task, so read it on the next one
-    window.addEventListener("blur", () => setTimeout(reclaimFocus, 0))
-    window._ytAppReady = onApiReady
-    if (window._ytReadySeen) {
+    globalThis.addEventListener("blur", () => setTimeout(reclaimFocus, 0))
+    globalThis._ytAppReady = onApiReady
+    if (globalThis._ytReadySeen) {
       onApiReady()
     } else {
-      window.onYouTubeIframeAPIReady = onApiReady
+      globalThis.onYouTubeIframeAPIReady = onApiReady
     }
     setTimeout(() => {
       if (ready) return
@@ -218,32 +215,16 @@ export function createPlayer(): Player {
       })
     },
     play() {
-      whenReady((p) => {
-        try {
-          p.playVideo()
-        } catch {}
-      })
+      whenReady(safely((p) => p.playVideo()))
     },
     pause() {
-      whenReady((p) => {
-        try {
-          p.pauseVideo()
-        } catch {}
-      })
+      whenReady(safely((p) => p.pauseVideo()))
     },
     mute() {
-      whenReady((p) => {
-        try {
-          p.mute()
-        } catch {}
-      })
+      whenReady(safely((p) => p.mute()))
     },
     unMute() {
-      whenReady((p) => {
-        try {
-          p.unMute()
-        } catch {}
-      })
+      whenReady(safely((p) => p.unMute()))
     },
     isMuted() {
       try {
@@ -253,18 +234,10 @@ export function createPlayer(): Player {
       }
     },
     seek(t) {
-      whenReady((p) => {
-        try {
-          p.seekTo(t, true)
-        } catch {}
-      })
+      whenReady(safely((p) => p.seekTo(t, true)))
     },
     setRate(rate) {
-      whenReady((p) => {
-        try {
-          p.setPlaybackRate(rate)
-        } catch {}
-      })
+      whenReady(safely((p) => p.setPlaybackRate(rate)))
     },
     currentTime() {
       try {
@@ -290,8 +263,6 @@ export function createPlayer(): Player {
         document.exitFullscreen().catch(() => {})
         return
       }
-      // the wrapper, not the frame: our overlays are siblings of the frame, so
-      // fullscreening it alone leaves them off-screen (see .player-wrap:fullscreen)
       const frame = frameEl()
       const target = frame?.parentElement ?? frame
       target?.requestFullscreen?.().catch(() => {})

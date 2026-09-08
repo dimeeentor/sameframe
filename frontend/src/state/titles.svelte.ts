@@ -19,7 +19,9 @@ export function ensureTitle(id: string): void {
         titles.set(id, j.title ?? id)
         return
       }
-    } catch {}
+    } catch {
+      // network/parse failure; fall through to the id-as-title fallback below
+    }
     titles.set(id, id)
   })().finally(() => inflight.delete(id))
   inflight.set(id, p)

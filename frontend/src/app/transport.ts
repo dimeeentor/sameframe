@@ -45,7 +45,9 @@ export function createTransport(roomCode: RoomCode): Transport {
     try {
       const res = await fetch(`/api/sync?room=${roomCode}`)
       if (res.ok) emit(await res.json())
-    } catch {}
+    } catch {
+      // network hiccup; next poll tick retries
+    }
   }
 
   function startPolling() {
@@ -95,7 +97,9 @@ export function createTransport(roomCode: RoomCode): Transport {
     ws.onmessage = (e) => {
       try {
         emit(JSON.parse(e.data))
-      } catch {}
+      } catch {
+        // malformed frame; drop it
+      }
     }
   }
 
