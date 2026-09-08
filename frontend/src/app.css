@@ -817,17 +817,6 @@ button.unmute-banner:active {
   background: var(--accent-tint);
 }
 
-.queue-list li.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 14px;
-  bottom: 14px;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--accent);
-}
-
 .queue-list li.dragging {
   opacity: 0.4;
 }
