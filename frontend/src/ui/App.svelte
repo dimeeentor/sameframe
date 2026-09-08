@@ -56,14 +56,16 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="app">
-  <Header />
+<Header />
+
+<main class="page">
   <UrlBar bind:this={urlBar} />
-  <div class="main">
+  <div class="grid">
     <div class="video-col">
       <Player />
     </div>
     <QueueList />
   </div>
-  <ShortcutsPanel />
-</div>
+</main>
+
+<ShortcutsPanel />

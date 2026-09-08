@@ -35,19 +35,20 @@
   }
 </script>
 
-<div class="controls">
+<div class="composer" class:invalid>
   <input
     bind:this={input}
     bind:value
     type="text"
-    placeholder="Paste YouTube link, Enter to add to queue"
+    placeholder="Paste a YouTube link — Enter to queue"
     spellcheck="false"
-    style:border-color={invalid ? "#ef4444" : ""}
     onkeydown={(e) => {
       if (e.key === "Enter") addToQueue()
       if (e.key === "Escape") input?.blur()
     }}
   />
-  <button class="secondary" onclick={addToQueue}>Add to queue</button>
-  <button id="loadBtn" onclick={playNow}>Play</button>
+  <div class="composer-actions">
+    <button class="btn" onclick={addToQueue}>Queue</button>
+    <button class="btn solid" onclick={playNow}>Play now</button>
+  </div>
 </div>

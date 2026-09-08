@@ -73,6 +73,7 @@
   >
     ⠿
   </button>
+  <span class="qindex mono">{String(index + 1).padStart(2, "0")}</span>
   <button
     class="qthumb-btn"
     type="button"
@@ -87,7 +88,7 @@
   <div class="qtitle">{titleOf(id)}</div>
   <button
     class="qdel"
-    title="remove"
+    title="Remove"
     onclick={(e) => {
       e.stopPropagation()
       onremove()

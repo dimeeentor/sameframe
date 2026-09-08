@@ -2,6 +2,14 @@
   let open = $state(false)
   let wrap: HTMLDivElement | undefined = $state()
 
+  const rows = [
+    { keys: ["/"], label: "Focus link field" },
+    { keys: ["Esc"], label: "Leave link field" },
+    { keys: ["Space"], label: "Play / pause" },
+    { keys: ["←", "→"], label: "Seek 5 seconds" },
+    { keys: ["F"], label: "Fullscreen" },
+  ]
+
   function onDocumentClick(e: MouseEvent) {
     if (open && wrap && !wrap.contains(e.target as Node)) open = false
   }
@@ -21,12 +29,15 @@
   </button>
   {#if open}
     <div class="shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts">
-      <div class="shortcuts-title">Keyboard shortcuts</div>
-      <div><kbd>/</kbd><span>Focus link field</span></div>
-      <div><kbd>Esc</kbd><span>Leave link field</span></div>
-      <div><kbd>Space</kbd><span>Play / pause</span></div>
-      <div><kbd>←</kbd><kbd>→</kbd><span>Seek 5 seconds</span></div>
-      <div><kbd>F</kbd><span>Toggle fullscreen</span></div>
+      <span class="mono">Shortcuts</span>
+      {#each rows as row (row.label)}
+        <div class="shortcut-row">
+          <span>{row.label}</span>
+          <span class="shortcut-keys">
+            {#each row.keys as key (key)}<kbd>{key}</kbd>{/each}
+          </span>
+        </div>
+      {/each}
     </div>
   {/if}
 </div>

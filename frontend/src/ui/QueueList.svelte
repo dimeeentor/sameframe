@@ -2,17 +2,21 @@
   import { session, view } from "../state/session.svelte"
   import { setMusicMode } from "../state/settings.svelte"
   import QueueRow from "./QueueRow.svelte"
+
+  const count = $derived(String(view.queue.length).padStart(2, "0"))
 </script>
 
-<section class="queue queue-col">
+<section class="queue-col">
   <div class="queue-head">
-    <h3>
+    <h2>
       Queue
-      <span>{view.queue.length ? `(${view.queue.length})` : ""}</span>
-    </h3>
-    <div class="queue-actions">
-      <button class="pill small" onclick={() => session.clearQueue()}>Clear</button>
-    </div>
+      <span class="mono">{count}</span>
+    </h2>
+    {#if view.queue.length}
+      <button class="queue-clear mono" onclick={() => session.clearQueue()}>
+        Clear
+      </button>
+    {/if}
   </div>
   <ul class="queue-list">
     {#each view.queue as id, i (id)}
@@ -30,6 +34,6 @@
     {/each}
   </ul>
   {#if view.queue.length === 0}
-    <div class="empty">No videos in the queue yet.</div>
+    <div class="empty mono">Queue is empty</div>
   {/if}
 </section>
