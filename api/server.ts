@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { serveStatic } from "hono/deno"
+import { compress } from "hono/compress"
 import { PORT, PUBLIC } from "./config.ts"
 import { api } from "./api.ts"
 import { ws } from "./ws.ts"
@@ -11,6 +12,8 @@ import { getLocalIP, startPublicTunnel } from "./tunnel.ts"
 const DIST_ROOT = new URL("../frontend/dist", import.meta.url).pathname
 
 const app = new Hono()
+
+app.use("*", compress())
 
 app.route("/", ws)
 app.route("/api", api)
