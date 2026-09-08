@@ -118,12 +118,6 @@ export function createSession(
     s.queueIndex = queueIndex
   }
 
-  // Plays made on the room's behalf carry no local user gesture, and browsers
-  // reject unmuted playback started that way: playVideo() is ignored and the
-  // iframe sits on YT's click-to-play splash while the room watches on. So the
-  // player is built muted (playerVars.mute), which is always allowed to start,
-  // and stays that way until the user asks for sound. `autoMuted` is whether
-  // *we* own the mute; once the user takes it over we stop touching it.
   let autoMuted = true
 
   function setMuted(m: boolean) {
@@ -143,20 +137,16 @@ export function createSession(
     currentTime: number,
     isPlaying: boolean,
   ) {
-    // own echo of our optimistic load, the player is already on this video
     if (videoId === s.videoId) {
       correctDrift(currentTime, isPlaying)
       return
     }
     s.videoId = videoId
     s.isPlaying = isPlaying
-    // a pause queued for the previous load must not land on this one
     if (pauseAfterLoad) {
       clearTimeout(pauseAfterLoad)
       pauseAfterLoad = null
     }
-    // YT reads 0 until the new video cues; without this the next tick sees a
-    // >1.5s jump from the old video and broadcasts a bogus seek(0)
     suppress(LOAD_SUPPRESS_MS)
     player.load(videoId, currentTime)
     if (isPlaying) {
@@ -178,8 +168,6 @@ export function createSession(
       suppress(INDUCED_MS)
       player.seek(remoteTime)
     }
-    // mid-transition the iframe still reports the old state (BUFFERING reads as
-    // not-playing), so inside a window we caused, trust our own intent
     const effective = isSuppressed() ? s.isPlaying : player.isPlaying()
     if (remotePlaying === effective) return
     s.isPlaying = remotePlaying
@@ -247,11 +235,7 @@ export function createSession(
   function tick() {
     if (!player.isReady()) return
     const t = player.currentTime()
-    // reconciling inside a window we caused would fight our own intent: the
-    // iframe reads "not playing" through BUFFERING, and clearing isPlaying
-    // there makes the eventual PLAYING look like fresh local intent to broadcast
     if (s.videoId && !isSuppressed()) {
-      // user seeked inside the YT UI: time jumped and we didn't cause it
       if (Math.abs(t - s.lastTickTime) > USER_SEEK_JUMP) {
         send({ type: "seek", currentTime: t })
       }
@@ -285,9 +269,6 @@ export function createSession(
     }
     if (isSuppressed() || !s.videoId) return
     const t = player.currentTime()
-    // only a transition that changes what we believe carries new intent; one
-    // that confirms it is the tail of a play/pause already commanded, and
-    // rebroadcasting that round-trips our stale position back to the room
     if (e.state === "playing") {
       if (s.isPlaying) return
       s.isPlaying = true
@@ -312,7 +293,9 @@ export function createSession(
         s.publicUrl = url
         publish()
       }
-    } catch {}
+    } catch {
+      // best-effort; UI just keeps whatever publicUrl it already had
+    }
   }
 
   // --- commands: optimistic state + suppression + transport.send ---
