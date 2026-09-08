@@ -24,13 +24,15 @@ export function parseVideoId(input: string): VideoId | null {
     if (v && VIDEO_ID_RE.test(v)) return v as VideoId
     const m = u.pathname.match(/\/(embed|shorts|v)\/([a-zA-Z0-9_-]{11})/)
     if (m) return m[2] as VideoId
-  } catch {}
+  } catch {
+    // not a URL; fall through to the raw-id regex below
+  }
   const m = url.match(/[a-zA-Z0-9_-]{11}/)
   return m ? (m[0] as VideoId) : null
 }
 
 export const thumb = (id: VideoId): string =>
-  `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+  `https://img.youtube.com/vi/${id}/mqdefault.jpg`
 
 export type ConnectionStatus = "connecting" | "open" | "polling" | "offline"
 
@@ -46,6 +48,9 @@ export type SyncSnapshot = {
   readonly viewerCount: number
   readonly connection: ConnectionStatus
   readonly roomCode: RoomCode | null
+  /** Playing muted because the autoplay policy demanded it, not because the
+   *  user asked. Already in sync: the affordance restores sound, nothing else. */
+  readonly muted: boolean
 }
 
 /** Share-link policy: room code is the only URL param, since the video lives in room state. */

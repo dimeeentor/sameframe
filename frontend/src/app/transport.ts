@@ -45,7 +45,9 @@ export function createTransport(roomCode: RoomCode): Transport {
     try {
       const res = await fetch(`/api/sync?room=${roomCode}`)
       if (res.ok) emit(await res.json())
-    } catch {}
+    } catch {
+      // network hiccup; next poll tick retries
+    }
   }
 
   function startPolling() {
@@ -85,6 +87,9 @@ export function createTransport(roomCode: RoomCode): Transport {
       sendClient({ type: "sync_request" })
     }
     ws.onclose = () => {
+      // stop() closes the socket, so without this the resulting onclose
+      // restarts the poll loop we just tore down and leaves it running
+      if (stopped) return
       setStatus("offline")
       startPolling()
       retryTimer = setTimeout(connect, RECONNECT_MS)
@@ -92,7 +97,9 @@ export function createTransport(roomCode: RoomCode): Transport {
     ws.onmessage = (e) => {
       try {
         emit(JSON.parse(e.data))
-      } catch {}
+      } catch {
+        // malformed frame; drop it
+      }
     }
   }
 

@@ -59,7 +59,7 @@ export type ClientMsg =
   | { type: "pause"; currentTime: number }
   | { type: "seek"; currentTime: number }
   | { type: "rate"; playbackRate: number }
-  | { type: "ended" }
+  | { type: "ended"; videoId: VideoId }
   | { type: "sync_request" }
 
 function asId(v: unknown): VideoId | null {
@@ -170,8 +170,11 @@ export function parseClientMsg(raw: unknown): ClientMsg | null {
           m.playbackRate > 0
         ? { type: "rate", playbackRate: m.playbackRate }
         : null
-    case "ended":
-      return { type: "ended" }
+    case "ended": {
+      // named so the server can drop the reports that lose the race
+      const videoId = asId(m.videoId)
+      return videoId ? { type: "ended", videoId } : null
+    }
     case "sync_request":
       return { type: "sync_request" }
     default:
