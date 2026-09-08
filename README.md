@@ -41,20 +41,13 @@ auto-advances when a video ends, looping back around when it runs out.
 - nocookie youtube player, synced play/pause/seek with drift correction so
   everyone stays in step
 - shared queue that pulls real video titles instead of just ids
-- music mode for audio focused sessions (hides the video, shows the cover
-  art), plus light, dark or system theme, one click to cycle
 - a room code you can hand to someone or type in to join, no fiddling with
   the url
-- share button that copies the right link depending on whether you're
-  tunneled or just on local wifi
-- a compact layout that folds the header down into one menu on small screens
 - falls back to http polling if a tunnel ever blocks websockets, so sync
   doesn't just break
 
 ## limitations
 
-- no auth. anyone with the link can control playback and the queue. fine for
-  friends, not for strangers.
 - the public tunnel link changes every time you restart `share`, so you'll
   need to resend it.
 - tested on macos and ios so far.
