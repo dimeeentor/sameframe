@@ -46,6 +46,9 @@ export type SyncSnapshot = {
   readonly viewerCount: number
   readonly connection: ConnectionStatus
   readonly roomCode: RoomCode | null
+  /** Playing muted because the autoplay policy demanded it, not because the
+   *  user asked. Already in sync: the affordance restores sound, nothing else. */
+  readonly muted: boolean
 }
 
 /** Share-link policy: room code is the only URL param, since the video lives in room state. */
