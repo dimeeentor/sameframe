@@ -262,6 +262,10 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       }
     }
     case "ended": {
+      // every viewer reports the same ending. Mutations are serialized, so the
+      // first advances the queue and the rest name a video that is no longer
+      // current — without this an N-viewer room skips N-1 entries per track
+      if (msg.videoId !== s.videoId) return NOOP
       // nothing after the last video → null → no-op, so playback never restarts
       const next = handleEnded(s)
       if (!next || next === s) return NOOP

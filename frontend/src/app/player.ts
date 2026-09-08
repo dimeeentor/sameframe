@@ -42,11 +42,9 @@ interface YTPlayer {
 }
 
 declare global {
-  interface Window {
-    onYouTubeIframeAPIReady?: () => void
-    _ytAppReady?: () => void
-    _ytReadySeen?: boolean
-  }
+  var onYouTubeIframeAPIReady: (() => void) | undefined
+  var _ytAppReady: (() => void) | undefined
+  var _ytReadySeen: boolean | undefined
 }
 
 export type PlayerEvent =
@@ -89,6 +87,17 @@ export function createPlayer(): Player {
     else pending.push(fn)
   }
 
+  /** YT calls can throw if the iframe is mid-teardown; nothing to recover. */
+  function safely(fn: (p: YTPlayer) => void) {
+    return (p: YTPlayer) => {
+      try {
+        fn(p)
+      } catch {
+        // ignored, see doc comment above
+      }
+    }
+  }
+
   function create() {
     if (yt || !host) return
     try {
@@ -102,6 +111,8 @@ export function createPlayer(): Player {
           enablejsapi: 1,
           playsinline: 1,
           autoplay: 1,
+          mute: 1,
+          disablekb: 1,
           iv_load_policy: 3,
           hl: navigator.language.split("-")[0],
           origin: location.origin,
@@ -143,12 +154,25 @@ export function createPlayer(): Player {
     create()
   }
 
+  function frameEl(): HTMLIFrameElement | null {
+    const el = document.getElementById("player")
+    if (el instanceof HTMLIFrameElement) return el
+    const found = el?.querySelector("iframe")
+    return found instanceof HTMLIFrameElement ? found : null
+  }
+
+  function reclaimFocus() {
+    const frame = frameEl()
+    if (frame && document.activeElement === frame) frame.blur()
+  }
+
   function handshake() {
-    window._ytAppReady = onApiReady
-    if (window._ytReadySeen) {
+    globalThis.addEventListener("blur", () => setTimeout(reclaimFocus, 0))
+    globalThis._ytAppReady = onApiReady
+    if (globalThis._ytReadySeen) {
       onApiReady()
     } else {
-      window.onYouTubeIframeAPIReady = onApiReady
+      globalThis.onYouTubeIframeAPIReady = onApiReady
     }
     setTimeout(() => {
       if (ready) return
@@ -191,32 +215,16 @@ export function createPlayer(): Player {
       })
     },
     play() {
-      whenReady((p) => {
-        try {
-          p.playVideo()
-        } catch {}
-      })
+      whenReady(safely((p) => p.playVideo()))
     },
     pause() {
-      whenReady((p) => {
-        try {
-          p.pauseVideo()
-        } catch {}
-      })
+      whenReady(safely((p) => p.pauseVideo()))
     },
     mute() {
-      whenReady((p) => {
-        try {
-          p.mute()
-        } catch {}
-      })
+      whenReady(safely((p) => p.mute()))
     },
     unMute() {
-      whenReady((p) => {
-        try {
-          p.unMute()
-        } catch {}
-      })
+      whenReady(safely((p) => p.unMute()))
     },
     isMuted() {
       try {
@@ -226,18 +234,10 @@ export function createPlayer(): Player {
       }
     },
     seek(t) {
-      whenReady((p) => {
-        try {
-          p.seekTo(t, true)
-        } catch {}
-      })
+      whenReady(safely((p) => p.seekTo(t, true)))
     },
     setRate(rate) {
-      whenReady((p) => {
-        try {
-          p.setPlaybackRate(rate)
-        } catch {}
-      })
+      whenReady(safely((p) => p.setPlaybackRate(rate)))
     },
     currentTime() {
       try {
@@ -263,13 +263,8 @@ export function createPlayer(): Player {
         document.exitFullscreen().catch(() => {})
         return
       }
-      // YT replaces the #player div with its iframe (keeping the id), so the
-      // fullscreen target is the iframe itself, its child, or the wrapper.
-      const el = document.getElementById("player")
-      const found = el?.querySelector("iframe")
-      const frame = found instanceof HTMLIFrameElement ? found : null
-      const target = frame ??
-        (el instanceof HTMLIFrameElement ? el : (el?.parentElement ?? null))
+      const frame = frameEl()
+      const target = frame?.parentElement ?? frame
       target?.requestFullscreen?.().catch(() => {})
     },
     onEvent(cb) {

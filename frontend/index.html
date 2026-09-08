@@ -11,11 +11,18 @@
     // else system preference. Prevents a light flash in dark mode.
     {
       const t = localStorage.getItem("sameframe-theme")
-      document.documentElement.dataset.theme = t === "light" || t === "dark"
+      const theme = t === "light" || t === "dark"
         ? t
         : matchMedia("(prefers-color-scheme: light)").matches
         ? "light"
         : "dark"
+      document.documentElement.dataset.theme = theme
+      // Safari tints its chrome from theme-color; without it, it samples the
+      // page and lands on white. Values mirror --bg in app.css.
+      const meta = document.createElement("meta")
+      meta.name = "theme-color"
+      meta.content = theme === "light" ? "#f4f6f9" : "#0b0f16"
+      document.head.appendChild(meta)
     }
     </script>
   </head>
