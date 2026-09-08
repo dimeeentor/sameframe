@@ -25,6 +25,12 @@
 </div>
 <div class="player-wrap">
   <div bind:this={host} id="player"></div>
+  {#if view.muted}
+    <!-- already playing in sync; this click only gives the sound back -->
+    <button class="unmute-banner" onclick={() => session.unmute()}>
+      Playing in sync, muted &mdash; tap for sound
+    </button>
+  {/if}
   {#if !view.videoId}
     <div class="placeholder">
       <div class="placeholder-inner">

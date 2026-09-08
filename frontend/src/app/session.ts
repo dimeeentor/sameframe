@@ -29,6 +29,7 @@ export type Session = {
   reorderQueue(from: number, to: number): void
   clearQueue(): void
   togglePlay(): void
+  unmute(): void
   seekBy(delta: number): void
   toggleFullscreen(): void
 }
@@ -45,12 +46,21 @@ type SessionState = {
   suppressUntil: number
   lastTickTime: number
   roomCode: RoomCode | null
+  muted: boolean
 }
 
 const TICK_MS = 400
 const PUBLIC_URL_POLL_MS = 5000
 const DRIFT_LIMIT = 1.2
 const USER_SEEK_JUMP = 1.5
+// how long a transition we caused stays marked as ours. A play runs
+// PAUSED → BUFFERING → PLAYING, well over a second on a cold iframe, so its
+// window has to outlast buffering; a seek or pause lands much sooner.
+const INDUCED_PLAY_MS = 2500
+const INDUCED_MS = 1200
+const LOAD_SUPPRESS_MS = 1500
+// beats at which we check a play we caused actually started
+const PLAY_VERIFY_MS = [300, 900, 2000, 4000]
 
 export function createSession(
   transport: Transport,
@@ -69,6 +79,7 @@ export function createSession(
     suppressUntil: 0,
     lastTickTime: 0,
     roomCode,
+    muted: false,
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
@@ -87,12 +98,14 @@ export function createSession(
       viewerCount: s.viewerCount,
       connection: s.connection,
       roomCode: s.roomCode,
+      muted: s.muted,
     }
     subs.forEach((cb) => cb(snap))
   }
 
+  // extends only: a short window must not truncate a longer one still in flight
   function suppress(ms = 1200) {
-    s.suppressUntil = Date.now() + ms
+    s.suppressUntil = Math.max(s.suppressUntil, Date.now() + ms)
   }
   function isSuppressed(): boolean {
     return Date.now() < s.suppressUntil
@@ -107,31 +120,70 @@ export function createSession(
     s.queueIndex = queueIndex
   }
 
-  // A remote load can arrive with no user activation (second client, fresh
-  // join), so the browser blocks unmuted autoplay and the iframe sticks on
-  // YT's "click to start" overlay. Muted playback is always allowed: retry
-  // muted a few times (cold iframes often aren't ready at the first beat)
-  // and restore sound on the user's first input.
+  // Plays made on the room's behalf carry no local user gesture, and browsers
+  // reject unmuted playback started that way: playVideo() is ignored and the
+  // iframe sits on YT's click-to-play splash while the room watches on. So the
+  // player is built muted (playerVars.mute) and the invariant is: either we are
+  // still auto-muted, or the user has interacted and granted the activation.
+  // Either way play() lands. `autoMuted` is whether *we* own the mute; once the
+  // user takes it over we stop touching it, bar the fallback in ensurePlaying.
+  let autoMuted = true
   let unmuteArmed = false
-  function armUnmute() {
-    if (unmuteArmed) return
-    unmuteArmed = true
-    const restore = () => {
-      unmuteArmed = false
-      player.unMute()
-    }
-    document.addEventListener("pointerdown", restore, { once: true })
-    document.addEventListener("keydown", restore, { once: true })
+  let playSeq = 0
+
+  function setMuted(m: boolean) {
+    if (s.muted === m) return
+    s.muted = m
+    publish()
   }
 
-  function retryMutedAutoplay(videoId: VideoId) {
-    for (const delay of [1000, 2500, 4000]) {
+  /** Drops in-flight play verification when a newer intent supersedes it. */
+  function cancelPlayVerify() {
+    playSeq++
+  }
+
+  /** Restore sound on the next local interaction: that gesture is what the
+   *  autoplay policy was waiting for. */
+  function armUnmute() {
+    if (unmuteArmed || !autoMuted) return
+    unmuteArmed = true
+    const restore = () => {
+      document.removeEventListener("pointerdown", restore)
+      document.removeEventListener("keydown", restore)
+      unmute()
+    }
+    document.addEventListener("pointerdown", restore)
+    document.addEventListener("keydown", restore)
+  }
+
+  function unmute() {
+    unmuteArmed = false
+    autoMuted = false
+    player.unMute()
+    setMuted(false)
+  }
+
+  /** Start playback and confirm it started: a play() the autoplay policy
+   *  rejects fails silently, so re-check on a ladder and drop back to muted,
+   *  which is never blocked. The catch-up target is recomputed from elapsed
+   *  wall-clock, so a late start resumes where the room is now. */
+  function ensurePlaying(videoId: VideoId, at: number) {
+    const seq = ++playSeq
+    const t0 = Date.now()
+    suppress(INDUCED_PLAY_MS)
+    player.play()
+    for (const delay of PLAY_VERIFY_MS) {
       setTimeout(() => {
-        if (s.videoId !== videoId || !s.isPlaying || player.isPlaying()) return
-        suppress(800)
+        if (seq !== playSeq || s.videoId !== videoId || !s.isPlaying) return
+        if (player.isPlaying()) return
+        suppress(INDUCED_PLAY_MS)
+        autoMuted = true
         player.mute()
+        const live = at + ((Date.now() - t0) / 1000) * s.playbackRate
+        if (Math.abs(player.currentTime() - live) > DRIFT_LIMIT) {
+          player.seek(Math.max(0, live))
+        }
         player.play()
-        armUnmute()
       }, delay)
     }
   }
@@ -148,15 +200,21 @@ export function createSession(
     }
     s.videoId = videoId
     s.isPlaying = isPlaying
+    // a pause queued for the previous load must not land on this one
+    if (pauseAfterLoad) {
+      clearTimeout(pauseAfterLoad)
+      pauseAfterLoad = null
+    }
     // YT reads 0 until the new video cues; without this the next tick sees a
     // >1.5s jump from the old video and broadcasts a bogus seek(0)
-    suppress(1500)
+    suppress(LOAD_SUPPRESS_MS)
     player.load(videoId, currentTime)
-    if (isPlaying) retryMutedAutoplay(videoId)
-    if (!isPlaying) {
-      if (pauseAfterLoad) clearTimeout(pauseAfterLoad)
+    if (isPlaying) {
+      ensurePlaying(videoId, currentTime)
+    } else {
+      cancelPlayVerify()
       pauseAfterLoad = setTimeout(() => {
-        suppress(800)
+        suppress(INDUCED_MS)
         player.pause()
         if (currentTime) player.seek(currentTime)
       }, 800)
@@ -167,14 +225,22 @@ export function createSession(
     if (!player.isReady() || !s.videoId) return
     const local = player.currentTime()
     if (Math.abs(local - remoteTime) > DRIFT_LIMIT) {
-      suppress(1200)
+      suppress(INDUCED_MS)
       player.seek(remoteTime)
     }
-    if (remotePlaying !== player.isPlaying()) {
-      suppress(800)
-      if (remotePlaying) player.play()
-      else player.pause()
-      s.isPlaying = remotePlaying
+    // mid-transition the iframe still reports the old state (BUFFERING reads as
+    // not-playing), so inside a window we caused, trust our own intent
+    const effective = isSuppressed() ? s.isPlaying : player.isPlaying()
+    if (remotePlaying === effective) return
+    s.isPlaying = remotePlaying
+    if (remotePlaying) {
+      // the autoplay gate applies to an already-loaded video too, not just to
+      // a fresh load, so this goes through ensurePlaying like everything else
+      ensurePlaying(s.videoId, remoteTime)
+    } else {
+      cancelPlayVerify()
+      suppress(INDUCED_MS)
+      player.pause()
     }
   }
 
@@ -208,7 +274,7 @@ export function createSession(
         correctDrift(m.currentTime, false)
         break
       case "seek":
-        suppress(1200)
+        suppress(INDUCED_MS)
         player.seek(m.currentTime)
         break
       case "rate":
@@ -233,9 +299,12 @@ export function createSession(
   function tick() {
     if (!player.isReady()) return
     const t = player.currentTime()
-    if (s.videoId) {
+    // reconciling inside a window we caused would fight our own intent: the
+    // iframe reads "not playing" through BUFFERING, and clearing isPlaying
+    // there makes the eventual PLAYING look like fresh local intent to broadcast
+    if (s.videoId && !isSuppressed()) {
       // user seeked inside the YT UI: time jumped and we didn't cause it
-      if (!isSuppressed() && Math.abs(t - s.lastTickTime) > USER_SEEK_JUMP) {
+      if (Math.abs(t - s.lastTickTime) > USER_SEEK_JUMP) {
         send({ type: "seek", currentTime: t })
       }
       if (player.isPlaying() !== s.isPlaying) {
@@ -243,6 +312,11 @@ export function createSession(
         publish()
       }
     }
+    // renewed here rather than at each call site, so every path that ends in
+    // muted playback offers sound back the same way
+    const needsSound = autoMuted && s.isPlaying && player.isMuted()
+    if (needsSound) armUnmute()
+    setMuted(needsSound)
     s.lastTickTime = t
   }
 
@@ -258,17 +332,24 @@ export function createSession(
     }
     if (e.kind !== "state") return
     if (e.state === "ended") {
-      if (!isSuppressed()) send({ type: "ended" })
+      if (!isSuppressed() && s.videoId) {
+        send({ type: "ended", videoId: s.videoId })
+      }
       s.isPlaying = false
       publish()
       return
     }
     if (isSuppressed() || !s.videoId) return
     const t = player.currentTime()
+    // only a transition that changes what we believe carries new intent; one
+    // that confirms it is the tail of a play/pause already commanded, and
+    // rebroadcasting that round-trips our stale position back to the room
     if (e.state === "playing") {
+      if (s.isPlaying) return
       s.isPlaying = true
       send({ type: "play", currentTime: t })
     } else if (e.state === "paused") {
+      if (!s.isPlaying) return
       s.isPlaying = false
       send({ type: "pause", currentTime: t })
     } else {
@@ -293,10 +374,19 @@ export function createSession(
   // --- commands: optimistic state + suppression + transport.send ---
 
   function loadVideo(id: VideoId) {
+    cancelPlayVerify()
     s.videoId = id
     s.isPlaying = true
-    suppress(1500)
+    if (pauseAfterLoad) {
+      clearTimeout(pauseAfterLoad)
+      pauseAfterLoad = null
+    }
+    // a hand-picked video rides the user's own gesture, so it gets sound
+    if (autoMuted) unmute()
     player.load(id, 0)
+    // unmuted, so this play can still be refused; the ladder falls back to
+    // muted rather than stalling on the splash
+    ensurePlaying(id, 0)
     publish()
     send({ type: "load", videoId: id })
   }
@@ -337,20 +427,23 @@ export function createSession(
 
   function togglePlay() {
     if (!player.isReady() || !s.videoId) return
-    // first input after a muted-autoplay start restores sound instead of pausing
-    if (player.isMuted()) {
-      player.unMute()
+    // first press while playing muted means "let me hear it", not "stop": the
+    // video is already in sync, only the sound is missing
+    if (autoMuted && player.isMuted() && s.isPlaying) {
+      unmute()
       return
     }
+    if (autoMuted) unmute()
     const t = player.currentTime()
-    suppress(800)
+    cancelPlayVerify()
     if (s.isPlaying) {
+      suppress(INDUCED_MS)
       player.pause()
       s.isPlaying = false
       send({ type: "pause", currentTime: t })
     } else {
-      player.play()
       s.isPlaying = true
+      ensurePlaying(s.videoId, t)
       send({ type: "play", currentTime: t })
     }
     publish()
@@ -358,8 +451,9 @@ export function createSession(
 
   function seekBy(delta: number) {
     if (!player.isReady() || !s.videoId) return
+    if (autoMuted) unmute()
     const target = Math.max(0, player.currentTime() + delta)
-    suppress(800)
+    suppress(INDUCED_MS)
     player.seek(target)
     send({ type: "seek", currentTime: target })
   }
@@ -388,6 +482,13 @@ export function createSession(
       started = false
       timers.forEach(clearInterval)
       timers.length = 0
+      // these outlive the intervals, and a stopped session must not keep
+      // driving the player
+      cancelPlayVerify()
+      if (pauseAfterLoad) {
+        clearTimeout(pauseAfterLoad)
+        pauseAfterLoad = null
+      }
       transport.stop()
     },
     attachPlayer(host) {
@@ -403,6 +504,7 @@ export function createSession(
     reorderQueue,
     clearQueue,
     togglePlay,
+    unmute,
     seekBy,
     toggleFullscreen,
   }

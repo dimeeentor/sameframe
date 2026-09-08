@@ -85,6 +85,9 @@ export function createTransport(roomCode: RoomCode): Transport {
       sendClient({ type: "sync_request" })
     }
     ws.onclose = () => {
+      // stop() closes the socket, so without this the resulting onclose
+      // restarts the poll loop we just tore down and leaves it running
+      if (stopped) return
       setStatus("offline")
       startPolling()
       retryTimer = setTimeout(connect, RECONNECT_MS)
