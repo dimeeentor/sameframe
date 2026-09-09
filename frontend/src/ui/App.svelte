@@ -11,6 +11,7 @@ import Footer from "./Footer.svelte"
 import { layout } from "../state/media.svelte"
 
 let urlBar: UrlBar | undefined = $state()
+let stageHeight = $state(0)
 
 onMount(() => {
   session.start()
@@ -60,8 +61,8 @@ function onKeydown(e: KeyboardEvent) {
 <div class="app">
   <Header />
   <UrlBar bind:this={urlBar} />
-  <div class="main">
-    <Player />
+  <div class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
+    <Player bind:stageHeight />
     <QueueList />
   </div>
   {#if !layout.compact}

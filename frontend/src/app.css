@@ -755,6 +755,8 @@ button.unmute-banner:active {
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  /* grows with each queued video, capped at the video section's height */
+  max-height: var(--stage-h, min(56vh, 520px));
 }
 
 .queue-head {
@@ -788,7 +790,7 @@ button.unmute-banner:active {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: min(56vh, 520px);
+  min-height: 0;
   padding: 0 8px 8px;
   overflow-y: auto;
   list-style: none;
@@ -1082,7 +1084,7 @@ kbd {
   .main {
     grid-template-columns: 1fr;
   }
-  .queue-list {
+  .queue {
     max-height: none;
   }
 }
