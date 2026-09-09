@@ -25,13 +25,18 @@ export function queueLoad<S extends QueueState>(s: S, id: VideoId): S {
   return { ...withId, videoId: id, queueIndex: withId.queue.indexOf(id) }
 }
 
-/** Remove by index; queueIndex clamped into range. */
+/** Remove by index. An entry above the current one shifts it down a slot, so
+ *  queueIndex keeps pointing at videoId; otherwise it is clamped into range.
+ *  Removing the current entry leaves the index on the survivor at that slot. */
 export function removeAt<S extends QueueState>(s: S, index: number): S {
   if (index < 0 || index >= s.queue.length) return s
+  const queue = s.queue.filter((_, i) => i !== index)
   return {
     ...s,
-    queue: s.queue.filter((_, i) => i !== index),
-    queueIndex: Math.min(s.queueIndex, s.queue.length - 2),
+    queue,
+    queueIndex: index < s.queueIndex
+      ? s.queueIndex - 1
+      : Math.min(s.queueIndex, queue.length - 1),
   }
 }
 
