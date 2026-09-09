@@ -113,6 +113,7 @@ export function createPlayer(): Player {
           autoplay: 1,
           mute: 1,
           disablekb: 1,
+          cc_load_policy: 0,
           iv_load_policy: 3,
           hl: navigator.language.split("-")[0],
           origin: location.origin,
