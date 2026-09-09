@@ -629,7 +629,7 @@ button.unmute-banner:active {
 /* empty stage — the one place colour is allowed to be loud */
 .placeholder {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   inset: 0;
   display: grid;
   place-items: center;
@@ -637,6 +637,10 @@ button.unmute-banner:active {
   text-align: center;
   color: #f2f6fb;
   background: #060a12;
+  /* Safari can composite the YouTube iframe's video layer above sibling
+     elements regardless of z-index; forcing this onto its own layer
+     keeps it on top there too. */
+  transform: translateZ(0);
 }
 
 .placeholder::before {
