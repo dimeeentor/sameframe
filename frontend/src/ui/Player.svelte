@@ -3,6 +3,8 @@ import { onMount } from "svelte"
 import { session, view } from "../state/session.svelte"
 import { titleOf } from "../state/titles.svelte"
 
+let { stageHeight = $bindable(0) }: { stageHeight?: number } = $props()
+
 let host: HTMLDivElement | undefined = $state()
 
 onMount(() => {
@@ -14,7 +16,7 @@ const position = $derived(
 )
 </script>
 
-<div class="stage">
+<div class="stage" bind:clientHeight={stageHeight}>
   <div class="player-wrap">
     <div bind:this={host} id="player"></div>
 
