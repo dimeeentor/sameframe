@@ -14,26 +14,29 @@ onMount(() => {
 const position = $derived(
   view.queueIndex >= 0 ? `${view.queueIndex + 1} / ${view.queue.length}` : "",
 )
+
+const gateHint = $derived(
+  view.videoId
+    ? `${titleOf(view.videoId)} is already playing. Join to pick it up in sync.`
+    : "Join first, then paste a YouTube link to start watching together.",
+)
 </script>
 
 <div class="stage" bind:clientHeight={stageHeight}>
   <div class="player-wrap">
     <div bind:this={host} id="player"></div>
 
-    {#if view.muted}
-      <!-- already playing in sync; this click only gives the sound back -->
-      <button class="unmute-banner" onclick={() => session.unmute()}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-          width="14" height="14">
-          <path d="M11 5 6 9H2v6h4l5 4z" />
-          <path d="M19.1 4.9a10 10 0 0 1 0 14.2M15.5 8.5a5 5 0 0 1 0 7" />
-        </svg>
-        Muted &mdash; tap for sound
-      </button>
-    {/if}
-
-    {#if !view.videoId}
+    {#if !view.joined}
+      <div class="placeholder">
+        <div class="placeholder-inner">
+          <h2>Watch together</h2>
+          <p>{gateHint}</p>
+          <button class="btn primary gate-btn" onclick={() => session.join()}>
+            Join room
+          </button>
+        </div>
+      </div>
+    {:else if !view.videoId}
       <div class="placeholder">
         <div class="placeholder-inner">
           <h2>Nothing playing yet</h2>
