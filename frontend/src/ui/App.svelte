@@ -37,6 +37,7 @@ $effect(() => {
 
 function onKeydown(e: KeyboardEvent) {
   if (isTypingTarget(e.target)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
   if (e.key === "/") {
     e.preventDefault()
     urlBar?.focus()
