@@ -15,7 +15,6 @@ import {
 import type { ClientMsg, ServerMsg } from "./wire.ts"
 import { enqueue, moveTo, removeAt } from "../../../shared/queue.ts"
 import type { Player, PlayerEvent } from "./player.ts"
-import { unlockAudio } from "./audio.ts"
 import type { Transport } from "./transport.ts"
 
 export type Session = {
@@ -333,7 +332,6 @@ export function createSession(
   function join() {
     if (s.joined || !playerHost) return
     s.joined = true
-    unlockAudio()
     const at = remoteTimeNow()
     player.attach(
       playerHost,
