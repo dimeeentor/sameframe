@@ -132,8 +132,7 @@ button:not(.drag-handle):active {
 .segmented button,
 .burger,
 .qdel,
-.qthumb-btn,
-.unmute-banner {
+.qthumb-btn {
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -151,8 +150,7 @@ button.icon-btn:active {
   transform: scale(0.9);
 }
 
-button.btn.block:active,
-button.unmute-banner:active {
+button.btn.block:active {
   transform: scale(0.98);
 }
 
@@ -602,30 +600,6 @@ button.unmute-banner:active {
   height: 100%;
 }
 
-.unmute-banner {
-  position: absolute;
-  z-index: 4;
-  left: 50%;
-  bottom: 58px;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 999px;
-  color: var(--accent-ink);
-  background: var(--accent);
-  box-shadow: var(--shadow-md);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.unmute-banner:hover {
-  background: var(--accent-hover);
-}
-
 /* empty stage — the one place colour is allowed to be loud */
 .placeholder {
   position: absolute;
@@ -684,6 +658,102 @@ button.unmute-banner:active {
   margin-top: 6px;
   color: rgba(242, 246, 251, 0.68);
   font-size: 13px;
+}
+
+.gate-btn {
+  margin-top: 18px;
+  height: 40px;
+  padding: 0 22px;
+  font-size: 14px;
+}
+
+/* ---------- join gate ---------- */
+
+.gate {
+  margin: auto;
+  width: min(400px, calc(100vw - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.gate::backdrop {
+  background: rgba(6, 10, 18, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+.gate[open] {
+  animation: gate-rise 0.24s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.gate[open]::backdrop {
+  animation: gate-fade 0.24s ease;
+}
+
+@keyframes gate-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+@keyframes gate-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.gate-glow {
+  position: absolute;
+  inset: -120px -20% auto;
+  height: 260px;
+  background:
+    radial-gradient(20rem 12rem at 50% 60%, var(--accent), transparent 68%),
+    radial-gradient(16rem 10rem at 26% 52%, var(--accent-2), transparent 64%);
+  filter: blur(40px);
+  opacity: 0.3;
+}
+
+.gate-body {
+  position: relative;
+  padding: 30px 28px 24px;
+  text-align: center;
+}
+
+.gate-label {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gate-code {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+}
+
+.gate-greeting {
+  margin-top: 12px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.gate-join {
+  height: 44px;
+  margin-top: 22px;
+  font-size: 14px;
 }
 
 .now-playing {
@@ -1085,6 +1155,9 @@ kbd {
 /* ---------- responsive ---------- */
 
 @media (max-width: 940px) {
+  html {
+    overscroll-behavior-y: none;
+  }
   .main {
     grid-template-columns: 1fr;
   }
