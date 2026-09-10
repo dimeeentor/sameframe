@@ -52,7 +52,7 @@ export const view = $state<SyncSnapshot>({
   viewerCount: 0,
   connection: "connecting",
   roomCode: null,
-  muted: false,
+  joined: false,
 })
 
 const ready: Promise<void> = (async () => {
@@ -71,6 +71,10 @@ export const session = {
   },
   attachPlayer(host: HTMLElement) {
     whenReady((s) => s.attachPlayer(host))
+  },
+  join() {
+    if (_session) _session.join()
+    else whenReady((s) => s.join())
   },
   subscribe(cb: (s: SyncSnapshot) => void) {
     if (_session) return _session.subscribe(cb)
@@ -97,9 +101,6 @@ export const session = {
   },
   togglePlay() {
     whenReady((s) => s.togglePlay())
-  },
-  unmute() {
-    whenReady((s) => s.unmute())
   },
   seekBy(d: number) {
     whenReady((s) => s.seekBy(d))
