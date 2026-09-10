@@ -8,6 +8,7 @@ import UrlBar from "./UrlBar.svelte"
 import Player from "./Player.svelte"
 import QueueList from "./QueueList.svelte"
 import Footer from "./Footer.svelte"
+import JoinGate from "./JoinGate.svelte"
 import { layout } from "../state/media.svelte"
 
 let urlBar: UrlBar | undefined = $state()
@@ -57,6 +58,8 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <svelte:window onkeydown={onKeydown} />
+
+<JoinGate />
 
 <div class="app">
   <Header />

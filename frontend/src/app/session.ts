@@ -21,6 +21,7 @@ export type Session = {
   start(): void
   stop(): void
   attachPlayer(host: HTMLElement): void
+  join(): void
   subscribe(cb: (s: SyncSnapshot) => void): () => void
 
   loadVideo(id: VideoId): void
@@ -29,7 +30,6 @@ export type Session = {
   reorderQueue(from: number, to: number): void
   clearQueue(): void
   togglePlay(): void
-  unmute(): void
   seekBy(delta: number): void
   toggleFullscreen(): void
 }
@@ -46,7 +46,7 @@ type SessionState = {
   suppressUntil: number
   lastTickTime: number
   roomCode: RoomCode | null
-  muted: boolean
+  joined: boolean
 }
 
 const TICK_MS = 400
@@ -77,11 +77,12 @@ export function createSession(
     suppressUntil: 0,
     lastTickTime: 0,
     roomCode,
-    muted: false,
+    joined: false,
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
   let pauseAfterLoad: ReturnType<typeof setTimeout> | null = null
+  let playerHost: HTMLElement | null = null
   let started = false
 
   function publish() {
@@ -96,7 +97,7 @@ export function createSession(
       viewerCount: s.viewerCount,
       connection: s.connection,
       roomCode: s.roomCode,
-      muted: s.muted,
+      joined: s.joined,
     }
     subs.forEach((cb) => cb(snap))
   }
@@ -118,18 +119,21 @@ export function createSession(
     s.queueIndex = queueIndex
   }
 
-  let autoMuted = true
+  let lastRemote: { time: number; at: number; playing: boolean } | null = null
 
-  function setMuted(m: boolean) {
-    if (s.muted === m) return
-    s.muted = m
-    publish()
+  function noteRemote(time: number, playing: boolean) {
+    lastRemote = { time, at: Date.now(), playing }
   }
 
-  function unmute() {
-    autoMuted = false
+  function remoteTimeNow(): number {
+    if (!lastRemote) return 0
+    const elapsed = lastRemote.playing ? (Date.now() - lastRemote.at) / 1000 : 0
+    return Math.max(0, lastRemote.time + elapsed)
+  }
+
+  function assertSound() {
     player.unMute()
-    setMuted(false)
+    player.setVolume(100)
   }
 
   function applyRemoteVideo(
@@ -137,6 +141,12 @@ export function createSession(
     currentTime: number,
     isPlaying: boolean,
   ) {
+    if (!s.joined) {
+      s.videoId = videoId
+      s.isPlaying = isPlaying
+      noteRemote(currentTime, isPlaying)
+      return
+    }
     if (videoId === s.videoId) {
       correctDrift(currentTime, isPlaying)
       return
@@ -148,7 +158,9 @@ export function createSession(
       pauseAfterLoad = null
     }
     suppress(LOAD_SUPPRESS_MS)
+    player.mute()
     player.load(videoId, currentTime)
+    assertSound()
     if (isPlaying) {
       suppress(INDUCED_PLAY_MS)
       player.play()
@@ -162,6 +174,11 @@ export function createSession(
   }
 
   function correctDrift(remoteTime: number, remotePlaying: boolean) {
+    if (!s.joined) {
+      s.isPlaying = remotePlaying
+      noteRemote(remoteTime, remotePlaying)
+      return
+    }
     if (!player.isReady() || !s.videoId) return
     const local = player.currentTime()
     if (Math.abs(local - remoteTime) > DRIFT_LIMIT) {
@@ -210,6 +227,10 @@ export function createSession(
         correctDrift(m.currentTime, false)
         break
       case "seek":
+        if (!s.joined) {
+          noteRemote(m.currentTime, s.isPlaying)
+          break
+        }
         suppress(INDUCED_MS)
         player.seek(m.currentTime)
         break
@@ -244,13 +265,21 @@ export function createSession(
         publish()
       }
     }
-    setMuted(autoMuted && s.isPlaying && player.isMuted())
     s.lastTickTime = t
   }
 
   function onPlayerEvent(e: PlayerEvent) {
     if (e.kind === "ready") {
       send({ type: "sync_request" })
+      return
+    }
+    if (e.kind === "autoplayBlocked") {
+      console.warn("[sameframe] autoplay blocked — falling back to muted")
+      if (s.isPlaying) {
+        suppress(INDUCED_PLAY_MS)
+        player.mute()
+        player.play()
+      }
       return
     }
     if (e.kind === "error") return
@@ -300,16 +329,40 @@ export function createSession(
 
   // --- commands: optimistic state + suppression + transport.send ---
 
+  function join() {
+    if (s.joined || !playerHost) return
+    s.joined = true
+    const at = remoteTimeNow()
+    player.attach(
+      playerHost,
+      s.videoId ? { id: s.videoId, at, sound: true } : null,
+    )
+    assertSound()
+    if (s.videoId && !s.isPlaying) {
+      pauseAfterLoad = setTimeout(() => {
+        suppress(INDUCED_MS)
+        player.pause()
+        if (at) player.seek(at)
+      }, 800)
+    }
+    publish()
+  }
+
   function loadVideo(id: VideoId) {
+    const gated = !s.joined
     s.videoId = id
     s.isPlaying = true
+    noteRemote(0, true)
     if (pauseAfterLoad) {
       clearTimeout(pauseAfterLoad)
       pauseAfterLoad = null
     }
     // a hand-picked video rides the user's own gesture, so it gets sound
-    if (autoMuted) unmute()
-    player.load(id, 0)
+    if (gated) join()
+    else {
+      assertSound()
+      player.load(id, 0)
+    }
     publish()
     send({ type: "load", videoId: id })
   }
@@ -350,13 +403,6 @@ export function createSession(
 
   function togglePlay() {
     if (!player.isReady() || !s.videoId) return
-    // first press while playing muted means "let me hear it", not "stop": the
-    // video is already in sync, only the sound is missing
-    if (autoMuted && player.isMuted() && s.isPlaying) {
-      unmute()
-      return
-    }
-    if (autoMuted) unmute()
     const t = player.currentTime()
     if (s.isPlaying) {
       suppress(INDUCED_MS)
@@ -374,7 +420,6 @@ export function createSession(
 
   function seekBy(delta: number) {
     if (!player.isReady() || !s.videoId) return
-    if (autoMuted) unmute()
     const target = Math.max(0, player.currentTime() + delta)
     suppress(INDUCED_MS)
     player.seek(target)
@@ -413,8 +458,9 @@ export function createSession(
       transport.stop()
     },
     attachPlayer(host) {
-      player.attach(host)
+      playerHost = host
     },
+    join,
     subscribe(cb) {
       subs.add(cb)
       return () => subs.delete(cb)
@@ -425,7 +471,6 @@ export function createSession(
     reorderQueue,
     clearQueue,
     togglePlay,
-    unmute,
     seekBy,
     toggleFullscreen,
   }
