@@ -25,12 +25,12 @@
   --line: #e1e6ee;
   --line-strong: #cbd2de;
 
-  --accent: #007aff;
-  --accent-hover: #0064d2;
+  --accent: #0d78be;
+  --accent-hover: #0a6aa6;
   --accent-ink: #ffffff;
-  --accent-tint: #e6f0ff;
+  --accent-tint: #e4f2fa;
   /* second decorative blue, never a state colour */
-  --accent-2: #5ac8fa;
+  --accent-2: #2fb8c4;
 
   --live: #23a55a;
   --hot: #ff3b30;
@@ -60,11 +60,11 @@
   --line: #222a36;
   --line-strong: #313a49;
 
-  --accent: #0a84ff;
-  --accent-hover: #3d9dff;
+  --accent: #128cc9;
+  --accent-hover: #3fa8db;
   --accent-ink: #ffffff;
-  --accent-tint: #11253c;
-  --accent-2: #64d2ff;
+  --accent-tint: #123044;
+  --accent-2: #3fd1c9;
 
   --live: #30d158;
   --hot: #ff453a;
@@ -207,17 +207,22 @@ button.btn.block:active {
 .presence {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 10px 4px 8px;
+  gap: 6px;
+  padding: 4px 11px 4px 9px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 12px;
   white-space: nowrap;
+}
+
+.presence .conn {
+  color: var(--muted);
+}
+
+.presence .count {
+  color: var(--ink-2);
+  font-weight: 560;
 }
 
 .dot {
@@ -295,10 +300,7 @@ button.btn.block:active {
   justify-content: space-between;
   padding: 0 10px 2px;
   color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
 }
 
 .menu-room .code {
@@ -535,11 +537,13 @@ button.btn.block:active {
 .composer .add {
   color: var(--ink-2);
   background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
 .composer .add:hover {
   color: var(--ink);
   background: var(--surface-3);
+  border-color: var(--line-strong);
 }
 
 .composer .play {
@@ -622,10 +626,10 @@ button.btn.block:active {
   position: absolute;
   inset: -25%;
   background:
-    radial-gradient(38rem 30rem at 50% 52%, #10336b, transparent 70%),
-    radial-gradient(34rem 26rem at 22% 24%, #0a84ff, transparent 62%),
-    radial-gradient(30rem 24rem at 80% 28%, #5ac8fa, transparent 62%),
-    radial-gradient(32rem 26rem at 52% 94%, #1fb6c9, transparent 62%);
+    radial-gradient(38rem 30rem at 50% 52%, #0d2c4a, transparent 70%),
+    radial-gradient(34rem 26rem at 22% 24%, var(--accent), transparent 62%),
+    radial-gradient(30rem 24rem at 80% 28%, var(--accent-2), transparent 62%),
+    radial-gradient(32rem 26rem at 52% 94%, var(--accent-2), transparent 62%);
   filter: blur(44px) saturate(1.05);
   opacity: 0.95;
 }
@@ -727,10 +731,8 @@ button.btn.block:active {
 .gate-label {
   display: block;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 560;
 }
 
 .gate-code {

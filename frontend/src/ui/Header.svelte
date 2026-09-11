@@ -60,9 +60,8 @@ function onDocumentClick(e: MouseEvent) {
 {#snippet presence()}
   <div class="presence" title="Connection status and viewers">
   <span class={dotClass}></span>
-  <span>{connText}</span>
-  <span>&middot;</span>
-  <span>{view.viewerCount} watching</span>
+  <span class="conn">{connText}</span>
+  <span class="count">{view.viewerCount} watching</span>
 </div>
 {/snippet}
 
