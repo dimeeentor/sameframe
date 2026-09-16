@@ -1,0 +1,21 @@
+{
+  "name": "sameframe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:fe": "pnpm install",
+    "build:fe": "pnpm --filter sameframe-frontend run build",
+    "dev:fe": "pnpm --filter sameframe-frontend run dev",
+    "build": "pnpm run build:fe",
+    "dev": "pnpm run build:fe && wrangler dev",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4",
+    "typescript": "^5",
+    "wrangler": "^4"
+  }
+}

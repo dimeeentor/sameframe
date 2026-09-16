@@ -1,4 +1,3 @@
-/// <reference lib="deno.unstable" />
 /** Room domain: the RoomState shape and the pure transition from a client
  *  command to the next state plus outgoing messages. No I/O, no KV, no
  *  sockets. A transition whose `next` is null (or the same object) changed

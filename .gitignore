@@ -2,7 +2,7 @@ dist/
 
 node_modules/
 
-.deno/
+.wrangler/
 
 .DS_Store
 Thumbs.db

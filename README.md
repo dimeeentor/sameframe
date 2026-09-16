@@ -6,29 +6,25 @@ and i wanted to make our own version instead.
 
 ## privacy & safety
 
-- **your mac is the server.** video state (what's playing, current time, paused
-  or not, the queue) lives only in memory on your machine. no database, no
-  accounts.
+- **runs on cloudflare workers.** each room's video state (what's playing,
+  current time, paused or not, the queue) lives in a Durable Object scoped to
+  that room's code, with a 24h expiry. no accounts, no cross-room data.
 - **no telemetry beyond youtube.** the only outside request is to youtube's
   nocookie player, plus an optional title lookup that proxies youtube's oembed
   endpoint. no analytics, no cookies of ours, nothing pinged back to me.
-- **the websocket stays local.** it just broadcasts play/pause/seek/queue events
-  to whoever's connected.
-- **public links are ephemeral.** sharing spins up a temporary tunnel to your
-  local server. close the terminal and the link is gone, nothing sits on an
-  external server.
+- **the websocket only broadcasts within a room.** play/pause/seek/queue events
+  go to whoever's connected to that room's code, nowhere else.
 
-## quick start (needs deno)
+## quick start (needs pnpm)
 
-install deno first if you don't have it: https://deno.land
+install pnpm first if you don't have it: https://pnpm.io/installation
 
 ```bash
 cd <your-clone>
-deno task install:fe # installs the frontend's npm deps (first run only)
-deno task build   # builds the svelte frontend into frontend/dist
-deno task dev      # runs at http://localhost:8000, or http://<your-ip>:8000 on the same wifi
-deno task share   # also gives you a public link for people outside your wifi
-deno task check   # type-checks everything
+pnpm install       # installs frontend + backend deps (first run only)
+pnpm run build     # builds the svelte frontend into frontend/dist
+pnpm run dev       # builds the frontend, then runs the worker locally via wrangler dev
+pnpm run check     # type-checks the backend
 ```
 
 open it in two tabs, paste any youtube link (full url, short url, or just the
@@ -42,21 +38,19 @@ auto-advances when a video ends, looping back around when it runs out.
 - shared queue that pulls real video titles instead of just ids
 - a room code you can hand to someone or type in to join, no fiddling with the
   url
-- falls back to http polling if a tunnel ever blocks websockets, so sync doesn't
+- falls back to http polling if a network ever blocks websockets, so sync doesn't
   just break
 
 ## limitations
 
-- the public tunnel link changes every time you restart `share`, so you'll need
-  to resend it.
 - tested on macos and ios so far.
-- if your host machine sleeps or the terminal closes, the session ends for
-  everyone.
+- a room's state (and its websocket connections) is torn down 24h after last
+  activity.
 
 ## license
 
-mit. runs entirely on your machine, nothing leaves your network except the
-youtube iframe and, if you use it, the sharing tunnel.
+mit. runs on cloudflare workers, nothing leaves the request except the
+youtube iframe and title lookup.
 
 ---
 
