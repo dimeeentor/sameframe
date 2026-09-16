@@ -1,6 +1,3 @@
-/** Room code generation. Moved out of the old KV-backed rooms.ts — the code
- *  itself is still needed by api.ts to pick a name before creating a room's
- *  Durable Object. */
 import type { RoomCode } from "../shared/messages.ts"
 
 const CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

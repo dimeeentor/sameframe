@@ -1,15 +1,3 @@
-/** One Durable Object instance per room, addressed via idFromName(roomCode).
- *  Owns the room's persisted state (replaces api/rooms.ts + Deno KV), the set
- *  of connected sockets (replaces api/presence.ts's in-memory Map, via the
- *  Hibernatable WebSockets API), and the 24h TTL (replaces KV's expireIn, via
- *  a storage alarm). The reducer in room-state.ts is unchanged and unaware of
- *  any of this — it stays pure.
- *
- *  No per-socket ordering queue: this.ctx.storage calls gate concurrent
- *  events on this Durable Object automatically (the runtime won't start a new
- *  webSocketMessage/fetch event while a storage call from a previous one is
- *  outstanding), so messages are already processed one at a time in arrival
- *  order without the WeakMap+promise-chain the old Deno socket handler needed. */
 import { DurableObject } from "cloudflare:workers"
 import { isRoomCode, parseClientMsg } from "../shared/messages.ts"
 import type { RoomCode } from "../shared/messages.ts"

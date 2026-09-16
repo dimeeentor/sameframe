@@ -7,10 +7,6 @@ import type { Env } from "./env.ts"
 
 const api = new Hono<{ Bindings: Env }>()
 
-// The old Deno tunnel gave rooms a shareable public URL; Workers deployments
-// are already publicly reachable, so there's no tunnel to report a URL for.
-// Kept as a route (rather than removed) so the frontend's existing fetch
-// doesn't 404 — it now always resolves to no public URL.
 api.get("/public-url", (c) => c.json({ url: null }))
 
 async function fetchRoomState(env: Env, code: RoomCode): Promise<RoomState | null> {
