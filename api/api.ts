@@ -1,47 +1,45 @@
-/// <reference lib="deno.unstable" />
 import { type Context, Hono } from "hono"
-import { publicUrl } from "./state.ts"
-import { createRoom, getRoomState, listRooms } from "./rooms.ts"
-import { getSyncPayload } from "./room-state.ts"
+import { generateRoomCode } from "./room-code.ts"
+import { getSyncPayload, type RoomState } from "./room-state.ts"
 import { isRoomCode, VIDEO_ID_RE } from "../shared/messages.ts"
 import type { RoomCode } from "../shared/messages.ts"
+import type { Env } from "./env.ts"
 
-const api = new Hono()
+const api = new Hono<{ Bindings: Env }>()
 
-api.get("/public-url", (c) => c.json({ url: publicUrl }))
+// The old Deno tunnel gave rooms a shareable public URL; Workers deployments
+// are already publicly reachable, so there's no tunnel to report a URL for.
+// Kept as a route (rather than removed) so the frontend's existing fetch
+// doesn't 404 — it now always resolves to no public URL.
+api.get("/public-url", (c) => c.json({ url: null }))
 
-// Debug: list all non-expired rooms (local only, 403 on deployed non-local host)
-// Useful to inspect KV: curl http://localhost:8000/api/rooms
-api.get("/rooms", async (c) => {
-  // exact hostname match. A spoofed "Host: localhost.evil.com" must not pass
-  const hostname = new URL(`http://${c.req.header("host") ?? "x"}`).hostname
-  if (
-    hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "[::1]"
-  ) {
-    return c.json({ error: "not available" }, 403)
-  }
-  const rooms = await listRooms()
-  return c.json(
-    rooms.map((r) => ({
-      code: r.code,
-      createdAt: r.createdAt,
-      videoId: r.videoId,
-      queueLength: r.queue.length,
-      queue: r.queue,
-      clientCount: r.clientCount,
-    })),
-  )
-})
+async function fetchRoomState(env: Env, code: RoomCode): Promise<RoomState | null> {
+  const stub = env.ROOMS.get(env.ROOMS.idFromName(code))
+  const res = await stub.fetch("https://room/state", {
+    headers: { "X-Room-Code": code },
+  })
+  if (res.status === 404) return null
+  return res.json()
+}
 
 api.post("/rooms", async (c) => {
-  const meta = await createRoom()
-  return c.json(meta, 201)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateRoomCode()
+    const stub = c.env.ROOMS.get(c.env.ROOMS.idFromName(code))
+    const res = await stub.fetch("https://room/create", {
+      method: "POST",
+      headers: { "X-Room-Code": code },
+    })
+    if (res.status === 201) return c.json(await res.json(), 201)
+    // 409: code collision, retry with a new code
+  }
+  return c.json({ error: "failed to generate unique room code" }, 500)
 })
 
 api.get("/rooms/:code", async (c) => {
   const code = c.req.param("code").toUpperCase()
   if (!isRoomCode(code)) return c.json({ error: "invalid code" }, 400)
-  const state = await getRoomState(code as RoomCode)
+  const state = await fetchRoomState(c.env, code as RoomCode)
   if (!state) return c.json({ error: "room not found" }, 404)
   return c.json({ code: state.code, createdAt: state.createdAt })
 })
@@ -52,9 +50,9 @@ api.get("/sync", async (c) => {
     return c.json({ error: "room query param required (6-char code)" }, 400)
   }
   const upper = code.toUpperCase() as RoomCode
-  const state = await getRoomState(upper)
+  const state = await fetchRoomState(c.env, upper)
   if (!state) return c.json({ error: "room not found" }, 404)
-  return c.json(getSyncPayload(state, publicUrl))
+  return c.json(getSyncPayload(state, null))
 })
 
 async function getTitle(c: Context) {
