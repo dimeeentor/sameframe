@@ -44,18 +44,15 @@ function estimatedTime(s: RoomState): number {
   return s.currentTime + elapsed
 }
 
-export function getSyncPayload(s: RoomState, publicUrl: string | null) {
+export function getSyncPayload(s: RoomState): ServerMsg {
   return {
-    type: "sync" as const,
+    type: "sync",
     videoId: s.videoId,
     currentTime: estimatedTime(s),
     isPlaying: s.isPlaying,
     playbackRate: s.playbackRate,
-    updatedAt: Date.now(),
     queue: s.queue,
     queueIndex: s.queueIndex,
-    publicUrl,
-    code: s.code,
   }
 }
 

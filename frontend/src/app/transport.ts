@@ -15,11 +15,16 @@ export type Transport = {
 
 const RECONNECT_MS = 1500
 const POLL_MS = 2000
+const PING_MS = 30000
+// the room answers this from the Durable Object auto-response table, so it
+// keeps idle proxies from dropping the socket without waking the room
+const PING = JSON.stringify({ type: "ping" })
 
 export function createTransport(roomCode: RoomCode): Transport {
   let ws: WebSocket | null = null
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let pingTimer: ReturnType<typeof setInterval> | null = null
   let stopped = false
   let status: ConnectionStatus = "connecting"
   const msgSubs = new Set<(m: ServerMsg) => void>()
@@ -66,6 +71,20 @@ export function createTransport(roomCode: RoomCode): Transport {
     }
   }
 
+  function startPing() {
+    stopPing()
+    pingTimer = setInterval(() => {
+      if (isOpen()) ws?.send(PING)
+    }, PING_MS)
+  }
+
+  function stopPing() {
+    if (pingTimer !== null) {
+      clearInterval(pingTimer)
+      pingTimer = null
+    }
+  }
+
   function sendClient(msg: ClientMsg) {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
   }
@@ -84,9 +103,11 @@ export function createTransport(roomCode: RoomCode): Transport {
     ws.onopen = () => {
       setStatus("open")
       stopPolling()
+      startPing()
       sendClient({ type: "sync_request" })
     }
     ws.onclose = () => {
+      stopPing()
       // stop() closes the socket, so without this the resulting onclose
       // restarts the poll loop we just tore down and leaves it running
       if (stopped) return
@@ -111,6 +132,7 @@ export function createTransport(roomCode: RoomCode): Transport {
     stop() {
       stopped = true
       stopPolling()
+      stopPing()
       if (retryTimer) clearTimeout(retryTimer)
       ws?.close()
       ws = null

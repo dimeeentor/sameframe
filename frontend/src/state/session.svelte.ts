@@ -47,7 +47,6 @@ export const view = $state<SyncSnapshot>({
   queueIndex: -1,
   isPlaying: false,
   playbackRate: 1,
-  publicUrl: null,
   shareUrl: location.href,
   viewerCount: 0,
   connection: "connecting",

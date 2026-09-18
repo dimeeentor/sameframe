@@ -43,7 +43,6 @@ export type SyncSnapshot = {
   readonly queueIndex: number
   readonly isPlaying: boolean
   readonly playbackRate: number
-  readonly publicUrl: string | null
   readonly shareUrl: string
   readonly viewerCount: number
   readonly connection: ConnectionStatus
@@ -52,13 +51,9 @@ export type SyncSnapshot = {
 }
 
 /** Share-link policy: room code is the only URL param, since the video lives in room state. */
-export function composeShareUrl(
-  publicUrl: string | null,
-  roomCode: RoomCode | null,
-): string {
-  const base = publicUrl ? publicUrl.replace(/\/$/, "") : location.origin
-  if (!roomCode) return base
-  return `${base}/?room=${roomCode}`
+export function composeShareUrl(roomCode: RoomCode | null): string {
+  if (!roomCode) return location.origin
+  return `${location.origin}/?room=${roomCode}`
 }
 
 export function parseRoomCode(input: string): RoomCode | null {
