@@ -40,7 +40,6 @@ type SessionState = {
   queueIndex: number
   isPlaying: boolean
   playbackRate: number
-  publicUrl: string | null
   viewerCount: number
   connection: ConnectionStatus
   suppressUntil: number
@@ -50,7 +49,6 @@ type SessionState = {
 }
 
 const TICK_MS = 400
-const PUBLIC_URL_POLL_MS = 5000
 const DRIFT_LIMIT = 1.2
 const USER_SEEK_JUMP = 1.5
 // how long a transition we caused stays marked as ours. A play runs
@@ -71,7 +69,6 @@ export function createSession(
     queueIndex: -1,
     isPlaying: false,
     playbackRate: 1,
-    publicUrl: null,
     viewerCount: 0,
     connection: "connecting",
     suppressUntil: 0,
@@ -92,8 +89,7 @@ export function createSession(
       queueIndex: s.queueIndex,
       isPlaying: s.isPlaying,
       playbackRate: s.playbackRate,
-      publicUrl: s.publicUrl,
-      shareUrl: composeShareUrl(s.publicUrl, s.roomCode),
+      shareUrl: composeShareUrl(s.roomCode),
       viewerCount: s.viewerCount,
       connection: s.connection,
       roomCode: s.roomCode,
@@ -204,7 +200,6 @@ export function createSession(
         applyRemoteVideo(m.videoId, m.currentTime, m.isPlaying)
         break
       case "sync":
-        if (m.publicUrl) s.publicUrl = m.publicUrl
         mergeQueue(m.queue, m.queueIndex)
         if (m.playbackRate !== s.playbackRate) {
           s.playbackRate = m.playbackRate
@@ -241,9 +236,6 @@ export function createSession(
         break
       case "clients":
         s.viewerCount = m.count
-        break
-      case "public_url":
-        s.publicUrl = m.url
         break
       default: {
         const _exhaustive: never = m
@@ -310,21 +302,6 @@ export function createSession(
       return
     }
     publish()
-  }
-
-  async function fetchPublicUrl() {
-    try {
-      const res = await fetch("/api/public-url")
-      if (!res.ok) return
-      const j = (await res.json()) as { url: string }
-      const url = j.url
-      if (url && url !== s.publicUrl) {
-        s.publicUrl = url
-        publish()
-      }
-    } catch {
-      // best-effort; UI just keeps whatever publicUrl it already had
-    }
   }
 
   // --- commands: optimistic state + suppression + transport.send ---
@@ -443,8 +420,6 @@ export function createSession(
       player.onEvent(onPlayerEvent)
       transport.start()
       timers.push(setInterval(tick, TICK_MS))
-      fetchPublicUrl()
-      timers.push(setInterval(fetchPublicUrl, PUBLIC_URL_POLL_MS))
     },
     stop() {
       started = false

@@ -24,7 +24,6 @@ export type RoomMetadata = {
 
 export type ServerMsg =
   | { type: "clients"; count: number }
-  | { type: "public_url"; url: string }
   | {
     type: "load"
     videoId: VideoId
@@ -42,7 +41,6 @@ export type ServerMsg =
     playbackRate: number
     queue: VideoId[]
     queueIndex: number
-    publicUrl: string | null
   }
   | { type: "play"; currentTime: number }
   | { type: "pause"; currentTime: number }
@@ -91,10 +89,6 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
       return typeof m.count === "number"
         ? { type: "clients", count: m.count }
         : null
-    case "public_url":
-      return typeof m.url === "string"
-        ? { type: "public_url", url: m.url }
-        : null
     case "load": {
       const videoId = asId(m.videoId)
       if (!videoId) return null
@@ -124,7 +118,6 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
         playbackRate: num(m.playbackRate, 1),
         queue: asQueue(m.queue),
         queueIndex: num(m.queueIndex, -1),
-        publicUrl: typeof m.publicUrl === "string" ? m.publicUrl : null,
       }
     }
     case "play":

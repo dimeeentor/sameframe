@@ -7,8 +7,6 @@ import type { Env } from "./env.ts"
 
 const api = new Hono<{ Bindings: Env }>()
 
-api.get("/public-url", (c) => c.json({ url: null }))
-
 async function fetchRoomState(env: Env, code: RoomCode): Promise<RoomState | null> {
   const stub = env.ROOMS.get(env.ROOMS.idFromName(code))
   const res = await stub.fetch("https://room/state", {
@@ -48,7 +46,7 @@ api.get("/sync", async (c) => {
   const upper = code.toUpperCase() as RoomCode
   const state = await fetchRoomState(c.env, upper)
   if (!state) return c.json({ error: "room not found" }, 404)
-  return c.json(getSyncPayload(state, null))
+  return c.json(getSyncPayload(state))
 })
 
 async function getTitle(c: Context) {
