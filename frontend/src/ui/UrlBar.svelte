@@ -1,11 +1,19 @@
 <script lang="ts">
 import { session } from "../state/session.svelte"
-import { parseVideoId } from "../app/domain"
+import { parseVideoId, thumb } from "../app/domain"
+import Icon from "./Icon.svelte"
+import { shake } from "./motion"
 
 let value = $state("")
 let invalid = $state(false)
+let focused = $state(false)
 let flashTimer: ReturnType<typeof setTimeout> | undefined
 let input: HTMLInputElement | undefined = $state()
+let root: HTMLDivElement | undefined = $state()
+
+const candidate = $derived(parseVideoId(value))
+let loadedThumb = $state<string | null>(null)
+const preview = $derived(candidate && loadedThumb === candidate ? candidate : null)
 
 export function focus() {
   input?.focus()
@@ -13,6 +21,7 @@ export function focus() {
 
 function reject() {
   invalid = true
+  shake(root)
   if (flashTimer) clearTimeout(flashTimer)
   flashTimer = setTimeout(() => (invalid = false), 1200)
 }
@@ -32,31 +41,50 @@ function addToQueue() {
 }
 </script>
 
-<div class="composer" class:invalid>
+<div class="composer" class:invalid class:has-preview={preview} bind:this={root}>
   <div class="composer-field">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
-      <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
-    </svg>
+    <span class="composer-lead" aria-hidden="true">
+      <span class="composer-glyph"><Icon name="link" /></span>
+      {#if candidate}
+        <img
+          class="composer-thumb"
+          src={thumb(candidate)}
+          alt=""
+          onload={() => (loadedThumb = candidate)}
+        />
+      {/if}
+    </span>
     <input
       bind:this={input}
       bind:value
       type="text"
+      inputmode="url"
       placeholder="Paste a YouTube link or video ID"
       spellcheck="false"
+      autocomplete="off"
       aria-label="YouTube link"
+      aria-invalid={invalid}
+      onfocus={() => (focused = true)}
+      onblur={() => (focused = false)}
       onkeydown={(e) => {
         if (e.key === "Enter") addToQueue()
         if (e.key === "Escape") input?.blur()
       }}
     />
+    {#if !focused && !value}
+      <kbd class="composer-kbd" aria-hidden="true">/</kbd>
+    {/if}
   </div>
-  <button class="add" type="button" onclick={addToQueue}>Add to queue</button>
-  <button class="play" type="button" onclick={playNow}>
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-    Play now
-  </button>
+  <div class="composer-actions">
+    <button class="btn subtle" type="button" onclick={addToQueue}>
+      <Icon name="plus" stroke={2} />
+      Queue
+    </button>
+    <button class="btn primary" type="button" onclick={playNow}>
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l11-6.8a.8.8 0 0 0 0-1.4l-11-6.8a.8.8 0 0 0-1.2.7Z" />
+      </svg>
+      Play now
+    </button>
+  </div>
 </div>

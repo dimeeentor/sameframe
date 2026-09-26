@@ -15,7 +15,8 @@ export type Transport = {
 
 const RECONNECT_MS = 1500
 const POLL_MS = 2000
-const PING_MS = 30000
+const PING_MS = 15000
+const SILENCE_MS = 2 * PING_MS + 5000
 // the room answers this from the Durable Object auto-response table, so it
 // keeps idle proxies from dropping the socket without waking the room
 const PING = JSON.stringify({ type: "ping" })
@@ -26,6 +27,7 @@ export function createTransport(roomCode: RoomCode): Transport {
   let retryTimer: ReturnType<typeof setTimeout> | null = null
   let pingTimer: ReturnType<typeof setInterval> | null = null
   let stopped = false
+  let lastHeard = 0
   let status: ConnectionStatus = "connecting"
   const msgSubs = new Set<(m: ServerMsg) => void>()
   const statusSubs = new Set<(s: ConnectionStatus) => void>()
@@ -74,8 +76,41 @@ export function createTransport(roomCode: RoomCode): Transport {
   function startPing() {
     stopPing()
     pingTimer = setInterval(() => {
-      if (isOpen()) ws?.send(PING)
+      if (!isOpen()) return
+      if (Date.now() - lastHeard > SILENCE_MS) {
+        drop()
+        return
+      }
+      ws?.send(PING)
     }, PING_MS)
+  }
+
+  function drop() {
+    const dead = ws
+    ws = null
+    if (dead) {
+      dead.onclose = null
+      dead.onmessage = null
+      try {
+        dead.close()
+      } catch {}
+    }
+    onDisconnect()
+  }
+
+  function onDisconnect() {
+    stopPing()
+    // stop() closes the socket, so without this the resulting onclose
+    // restarts the poll loop we just tore down and leaves it running
+    if (stopped) return
+    setStatus("offline")
+    startPolling()
+    if (retryTimer) clearTimeout(retryTimer)
+    retryTimer = setTimeout(connect, RECONNECT_MS)
+  }
+
+  function onPageHide() {
+    ws?.close(1000, "page hidden")
   }
 
   function stopPing() {
@@ -101,21 +136,15 @@ export function createTransport(roomCode: RoomCode): Transport {
       return
     }
     ws.onopen = () => {
+      lastHeard = Date.now()
       setStatus("open")
       stopPolling()
       startPing()
       sendClient({ type: "sync_request" })
     }
-    ws.onclose = () => {
-      stopPing()
-      // stop() closes the socket, so without this the resulting onclose
-      // restarts the poll loop we just tore down and leaves it running
-      if (stopped) return
-      setStatus("offline")
-      startPolling()
-      retryTimer = setTimeout(connect, RECONNECT_MS)
-    }
+    ws.onclose = onDisconnect
     ws.onmessage = (e) => {
+      lastHeard = Date.now()
       try {
         emit(JSON.parse(e.data))
       } catch {
@@ -127,10 +156,12 @@ export function createTransport(roomCode: RoomCode): Transport {
   return {
     start() {
       stopped = false
+      addEventListener("pagehide", onPageHide)
       connect()
     },
     stop() {
       stopped = true
+      removeEventListener("pagehide", onPageHide)
       stopPolling()
       stopPing()
       if (retryTimer) clearTimeout(retryTimer)

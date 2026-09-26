@@ -14,6 +14,9 @@ const STATE_KEY = "state"
 // object, so clients can hold the socket open through idle proxies for free
 const PING = JSON.stringify({ type: "ping" })
 const PONG = JSON.stringify({ type: "pong" })
+const STALE_MS = 40 * 1000
+
+type SocketMeta = { connectedAt: number }
 
 function isRoomState(v: unknown): v is RoomState {
   if (typeof v !== "object" || v === null) return false
@@ -91,17 +94,37 @@ export class RoomDurableObject extends DurableObject<Env> {
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     this.ctx.acceptWebSocket(server)
+    server.serializeAttachment({ connectedAt: Date.now() } satisfies SocketMeta)
 
     server.send(JSON.stringify(getSyncPayload(this.ensureRoom(code))))
     this.broadcastClientCount()
+    setTimeout(() => this.broadcastClientCount(), STALE_MS + 1000)
 
     return new Response(null, { status: 101, webSocket: client })
+  }
+
+  private isStale(ws: WebSocket, now: number): boolean {
+    const meta = ws.deserializeAttachment() as SocketMeta | null
+    const lastPing = this.ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() ?? 0
+    return now - Math.max(meta?.connectedAt ?? 0, lastPing) > STALE_MS
+  }
+
+  private liveSockets(exclude?: WebSocket): WebSocket[] {
+    const now = Date.now()
+    return this.ctx.getWebSockets().filter((s) => {
+      if (s === exclude || s.readyState !== WebSocket.OPEN) return false
+      if (!this.isStale(s, now)) return true
+      try {
+        s.close(4000, "stale")
+      } catch {}
+      return false
+    })
   }
 
   /** `exclude` is the socket this event is about: getWebSockets() can still
    *  return a socket that is closing, which would report one viewer too many. */
   private broadcastClientCount(exclude?: WebSocket) {
-    const live = this.ctx.getWebSockets().filter((s) => s !== exclude)
+    const live = this.liveSockets(exclude)
     const data = JSON.stringify({ type: "clients", count: live.length })
     for (const socket of live) {
       try {
@@ -177,6 +200,9 @@ export class RoomDurableObject extends DurableObject<Env> {
 
   webSocketError(ws: WebSocket, error: unknown) {
     console.error("ws error", error)
+    try {
+      ws.close(4001, "error")
+    } catch {}
     this.broadcastClientCount(ws)
   }
 

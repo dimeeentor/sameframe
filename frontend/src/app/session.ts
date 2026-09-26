@@ -14,7 +14,7 @@ import {
 } from "./domain.ts"
 import type { ClientMsg, ServerMsg } from "./wire.ts"
 import { enqueue, moveTo, removeAt } from "../../../shared/queue.ts"
-import type { Player, PlayerEvent } from "./player.ts"
+import type { PlaybackState, Player, PlayerEvent } from "./player.ts"
 import type { Transport } from "./transport.ts"
 
 export type Session = {
@@ -44,6 +44,8 @@ type SessionState = {
   connection: ConnectionStatus
   suppressUntil: number
   lastTickTime: number
+  lastTickAt: number
+  lastResyncAt: number
   roomCode: RoomCode | null
   joined: boolean
 }
@@ -57,6 +59,8 @@ const USER_SEEK_JUMP = 1.5
 const INDUCED_PLAY_MS = 2500
 const INDUCED_MS = 1200
 const LOAD_SUPPRESS_MS = 1500
+const RESYNC_DRIFT = 2
+const RESYNC_COOLDOWN_MS = 5000
 
 export function createSession(
   transport: Transport,
@@ -73,6 +77,8 @@ export function createSession(
     connection: "connecting",
     suppressUntil: 0,
     lastTickTime: 0,
+    lastTickAt: 0,
+    lastResyncAt: 0,
     roomCode,
     joined: false,
   }
@@ -116,6 +122,7 @@ export function createSession(
   }
 
   let lastRemote: { time: number; at: number; playing: boolean } | null = null
+  let anchorOnPlay = false
 
   function noteRemote(time: number, playing: boolean) {
     lastRemote = { time, at: Date.now(), playing }
@@ -123,8 +130,15 @@ export function createSession(
 
   function remoteTimeNow(): number {
     if (!lastRemote) return 0
-    const elapsed = lastRemote.playing ? (Date.now() - lastRemote.at) / 1000 : 0
+    const elapsed = lastRemote.playing
+      ? ((Date.now() - lastRemote.at) / 1000) * s.playbackRate
+      : 0
     return Math.max(0, lastRemote.time + elapsed)
+  }
+
+  function setRoomRate(rate: number) {
+    if (lastRemote) noteRemote(remoteTimeNow(), lastRemote.playing)
+    s.playbackRate = rate
   }
 
   function assertSound() {
@@ -137,10 +151,10 @@ export function createSession(
     currentTime: number,
     isPlaying: boolean,
   ) {
+    noteRemote(currentTime, isPlaying)
     if (!s.joined) {
       s.videoId = videoId
       s.isPlaying = isPlaying
-      noteRemote(currentTime, isPlaying)
       return
     }
     if (videoId === s.videoId) {
@@ -149,6 +163,7 @@ export function createSession(
     }
     s.videoId = videoId
     s.isPlaying = isPlaying
+    anchorOnPlay = currentTime === 0
     if (pauseAfterLoad) {
       clearTimeout(pauseAfterLoad)
       pauseAfterLoad = null
@@ -170,9 +185,9 @@ export function createSession(
   }
 
   function correctDrift(remoteTime: number, remotePlaying: boolean) {
+    noteRemote(remoteTime, remotePlaying)
     if (!s.joined) {
       s.isPlaying = remotePlaying
-      noteRemote(remoteTime, remotePlaying)
       return
     }
     if (!player.isReady() || !s.videoId) return
@@ -181,7 +196,10 @@ export function createSession(
       suppress(INDUCED_MS)
       player.seek(remoteTime)
     }
-    const effective = isSuppressed() ? s.isPlaying : player.isPlaying()
+    const st = player.state()
+    const effective = isSuppressed()
+      ? s.isPlaying
+      : st === "playing" || st === "buffering"
     if (remotePlaying === effective) return
     s.isPlaying = remotePlaying
     if (remotePlaying) {
@@ -202,7 +220,7 @@ export function createSession(
       case "sync":
         mergeQueue(m.queue, m.queueIndex)
         if (m.playbackRate !== s.playbackRate) {
-          s.playbackRate = m.playbackRate
+          setRoomRate(m.playbackRate)
           suppress(800)
           player.setRate(m.playbackRate)
         }
@@ -222,15 +240,13 @@ export function createSession(
         correctDrift(m.currentTime, false)
         break
       case "seek":
-        if (!s.joined) {
-          noteRemote(m.currentTime, s.isPlaying)
-          break
-        }
+        noteRemote(m.currentTime, lastRemote?.playing ?? s.isPlaying)
+        if (!s.joined) break
         suppress(INDUCED_MS)
         player.seek(m.currentTime)
         break
       case "rate":
-        s.playbackRate = m.playbackRate
+        setRoomRate(m.playbackRate)
         suppress(800)
         player.setRate(m.playbackRate)
         break
@@ -245,19 +261,43 @@ export function createSession(
     publish()
   }
 
+  function resync(t: number, st: PlaybackState, now: number) {
+    if (st !== "playing" || !lastRemote?.playing) return
+    if (now - s.lastResyncAt < RESYNC_COOLDOWN_MS) return
+    const target = remoteTimeNow()
+    if (Math.abs(t - target) <= RESYNC_DRIFT) return
+    s.lastResyncAt = now
+    suppress(INDUCED_MS)
+    player.seek(target)
+  }
+
   function tick() {
     if (!player.isReady()) return
+    const now = Date.now()
     const t = player.currentTime()
-    if (s.videoId && !isSuppressed()) {
-      if (Math.abs(t - s.lastTickTime) > USER_SEEK_JUMP) {
+    const st = player.state()
+    if (s.videoId && s.joined && !isSuppressed()) {
+      const expected = st === "playing" && s.lastTickAt
+        ? s.lastTickTime + ((now - s.lastTickAt) / 1000) * s.playbackRate
+        : s.lastTickTime
+      const settled = st === "playing" || st === "paused" ||
+        st === "buffering"
+      if (settled && Math.abs(t - expected) > USER_SEEK_JUMP) {
         send({ type: "seek", currentTime: t })
+        noteRemote(t, s.isPlaying)
+      } else {
+        resync(t, st, now)
       }
-      if (player.isPlaying() !== s.isPlaying) {
-        s.isPlaying = player.isPlaying()
-        publish()
+      if (st === "playing" || st === "paused") {
+        const playing = st === "playing"
+        if (playing !== s.isPlaying) {
+          s.isPlaying = playing
+          publish()
+        }
       }
     }
     s.lastTickTime = t
+    s.lastTickAt = now
   }
 
   function onPlayerEvent(e: PlayerEvent) {
@@ -276,15 +316,23 @@ export function createSession(
     }
     if (e.kind === "error") return
     if (e.kind === "rate") {
-      if (!isSuppressed()) send({ type: "rate", playbackRate: e.rate })
+      if (!isSuppressed()) {
+        setRoomRate(e.rate)
+        send({ type: "rate", playbackRate: e.rate })
+      }
       return
     }
     if (e.kind !== "state") return
+    if (e.state === "playing" && anchorOnPlay) {
+      anchorOnPlay = false
+      if (lastRemote?.playing) noteRemote(player.currentTime(), true)
+    }
     if (e.state === "ended") {
       if (!isSuppressed() && s.videoId) {
         send({ type: "ended", videoId: s.videoId })
       }
       s.isPlaying = false
+      noteRemote(player.currentTime(), false)
       publish()
       return
     }
@@ -293,10 +341,12 @@ export function createSession(
     if (e.state === "playing") {
       if (s.isPlaying) return
       s.isPlaying = true
+      noteRemote(t, true)
       send({ type: "play", currentTime: t })
     } else if (e.state === "paused") {
       if (!s.isPlaying) return
       s.isPlaying = false
+      noteRemote(t, false)
       send({ type: "pause", currentTime: t })
     } else {
       return
@@ -330,6 +380,7 @@ export function createSession(
     s.videoId = id
     s.isPlaying = true
     noteRemote(0, true)
+    anchorOnPlay = true
     if (pauseAfterLoad) {
       clearTimeout(pauseAfterLoad)
       pauseAfterLoad = null
@@ -392,6 +443,7 @@ export function createSession(
       s.isPlaying = true
       send({ type: "play", currentTime: t })
     }
+    noteRemote(t, s.isPlaying)
     publish()
   }
 
@@ -400,6 +452,7 @@ export function createSession(
     const target = Math.max(0, player.currentTime() + delta)
     suppress(INDUCED_MS)
     player.seek(target)
+    noteRemote(target, s.isPlaying)
     send({ type: "seek", currentTime: target })
   }
 

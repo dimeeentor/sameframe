@@ -62,13 +62,17 @@ function onKeydown(e: KeyboardEvent) {
 
 <JoinGate />
 
-<div class="app">
-  <Header />
-  <UrlBar bind:this={urlBar} />
-  <div class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
+<div class="app" class:compact={layout.compact}>
+  <Header>
+    <UrlBar bind:this={urlBar} />
+  </Header>
+  <main class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
     <Player bind:stageHeight />
+    {#if layout.compact}
+      <UrlBar bind:this={urlBar} />
+    {/if}
     <QueueList />
-  </div>
+  </main>
   {#if !layout.compact}
     <Footer />
   {/if}
