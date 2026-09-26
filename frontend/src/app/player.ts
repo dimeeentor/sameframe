@@ -50,9 +50,16 @@ declare global {
   var _ytReadySeen: boolean | undefined
 }
 
+export type PlaybackState =
+  | "ended"
+  | "playing"
+  | "paused"
+  | "buffering"
+  | "other"
+
 export type PlayerEvent =
   | { kind: "ready" }
-  | { kind: "state"; state: "ended" | "playing" | "paused" | "other" }
+  | { kind: "state"; state: PlaybackState }
   | { kind: "rate"; rate: number }
   | { kind: "autoplayBlocked" }
   | { kind: "error"; code: number }
@@ -73,12 +80,28 @@ export type Player = {
   setRate(rate: number): void
   currentTime(): number
   isPlaying(): boolean
+  state(): PlaybackState
   isReady(): boolean
   toggleFullscreen(): void
   onEvent(cb: (e: PlayerEvent) => void): () => void
 }
 
 const READY_RETRY_MS = 4000
+
+function toPlaybackState(code: number): PlaybackState {
+  switch (code) {
+    case YT.PlayerState.ENDED:
+      return "ended"
+    case YT.PlayerState.PLAYING:
+      return "playing"
+    case YT.PlayerState.PAUSED:
+      return "paused"
+    case YT.PlayerState.BUFFERING:
+      return "buffering"
+    default:
+      return "other"
+  }
+}
 
 export function createPlayer(): Player {
   let yt: YTPlayer | null = null
@@ -143,16 +166,8 @@ export function createPlayer(): Player {
             )
             emit({ kind: "error", code: e.data })
           },
-          onStateChange: (e) => {
-            const state = e.data === YT.PlayerState.ENDED
-              ? "ended"
-              : e.data === YT.PlayerState.PLAYING
-              ? "playing"
-              : e.data === YT.PlayerState.PAUSED
-              ? "paused"
-              : "other"
-            emit({ kind: "state", state })
-          },
+          onStateChange: (e) =>
+            emit({ kind: "state", state: toPlaybackState(e.data) }),
           onPlaybackRateChange: (e) => emit({ kind: "rate", rate: e.data }),
           onAutoplayBlocked: () => emit({ kind: "autoplayBlocked" }),
         },
@@ -269,6 +284,13 @@ export function createPlayer(): Player {
           : false
       } catch {
         return false
+      }
+    },
+    state() {
+      try {
+        return ready && yt ? toPlaybackState(yt.getPlayerState()) : "other"
+      } catch {
+        return "other"
       }
     },
     isReady() {
