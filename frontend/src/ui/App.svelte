@@ -19,20 +19,10 @@ onMount(() => {
   return () => session.stop()
 })
 
+// fetch titles for the current and every queued video
 $effect(() => {
-  const id = view.videoId
-  if (id) {
-    ensureTitle(id)
-    document.title = `${titleOf(id)} - Sameframe`
-  } else {
-    document.title = "Sameframe"
-  }
-})
-
-// fetch titles for every queued video; reading view.queue registers the dependency
-$effect(() => {
-  const q = view.queue
-  for (const id of q) ensureTitle(id)
+  if (view.videoId) ensureTitle(view.videoId)
+  for (const id of view.queue) ensureTitle(id)
 })
 
 function onKeydown(e: KeyboardEvent) {
@@ -57,6 +47,10 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 </script>
+
+<svelte:head>
+  <title>{view.videoId ? `${titleOf(view.videoId)} - Sameframe` : "Sameframe"}</title>
+</svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 

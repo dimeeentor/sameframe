@@ -292,6 +292,8 @@ export function createSession(
         const playing = st === "playing"
         if (playing !== s.isPlaying) {
           s.isPlaying = playing
+          noteRemote(t, playing)
+          send({ type: playing ? "play" : "pause", currentTime: t })
           publish()
         }
       }
