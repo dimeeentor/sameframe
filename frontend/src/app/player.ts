@@ -64,10 +64,14 @@ export type PlayerEvent =
   | { kind: "autoplayBlocked" }
   | { kind: "error"; code: number }
 
-export type PlayerStart = { id: VideoId; at: number; sound: boolean }
+export type PlayerStart = {
+  id: VideoId
+  at: number
+  sound: boolean
+  playing: boolean
+}
 
 export type Player = {
-  /** Idempotent; YT replaces the host div (#player) with its iframe. */
   attach(host: HTMLElement, start?: PlayerStart | null): void
   load(id: VideoId, startAt: number): void
   play(): void
@@ -118,7 +122,6 @@ export function createPlayer(): Player {
     else pending.push(fn)
   }
 
-  /** YT calls can throw if the iframe is mid-teardown; nothing to recover. */
   function safely(fn: (p: YTPlayer) => void) {
     return (p: YTPlayer) => {
       try {
@@ -142,7 +145,7 @@ export function createPlayer(): Player {
           rel: 0,
           enablejsapi: 1,
           playsinline: 1,
-          autoplay: 1,
+          autoplay: start && !start.playing ? 0 : 1,
           mute: start?.sound ? 0 : 1,
           ...(start?.at ? { start: Math.floor(start.at) } : {}),
           disablekb: 1,

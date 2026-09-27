@@ -192,11 +192,11 @@ export function createSession(
     }
     if (!player.isReady() || !s.videoId) return
     const local = player.currentTime()
-    if (Math.abs(local - remoteTime) > DRIFT_LIMIT) {
+    const st = player.state()
+    if (st !== "other" && Math.abs(local - remoteTime) > DRIFT_LIMIT) {
       suppress(INDUCED_MS)
       player.seek(remoteTime)
     }
-    const st = player.state()
     const effective = isSuppressed()
       ? s.isPlaying
       : st === "playing" || st === "buffering"
@@ -364,16 +364,11 @@ export function createSession(
     const at = remoteTimeNow()
     player.attach(
       playerHost,
-      s.videoId ? { id: s.videoId, at, sound: true } : null,
+      s.videoId
+        ? { id: s.videoId, at, sound: true, playing: s.isPlaying }
+        : null,
     )
     assertSound()
-    if (s.videoId && !s.isPlaying) {
-      pauseAfterLoad = setTimeout(() => {
-        suppress(INDUCED_MS)
-        player.pause()
-        if (at) player.seek(at)
-      }, 800)
-    }
     publish()
   }
 
