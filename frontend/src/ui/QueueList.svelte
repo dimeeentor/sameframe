@@ -1,6 +1,8 @@
 <script lang="ts">
 import { session, view } from "../state/session.svelte"
 import QueueRow from "./QueueRow.svelte"
+import { fade } from "svelte/transition"
+import { rise } from "./motion"
 
 let holding = $state(false)
 
@@ -45,25 +47,29 @@ function onFillEnd(e: TransitionEvent) {
     {/if}
   </div>
 
-  {#if view.queue.length === 0}
-    <div class="empty">
-      <div class="empty-reel" aria-hidden="true"><i></i><i></i><i></i></div>
-      <p>The reel is empty.</p>
-      <span>Queue a link and it lines up here, playing in order.</span>
-    </div>
-  {:else}
-    <ol class="queue-list">
-      {#each view.queue as id, i (id)}
-        <QueueRow
-          {id}
-          index={i}
-          active={i === view.queueIndex}
-          playing={i === view.queueIndex && view.isPlaying}
-          onplay={() => session.loadVideo(id)}
-          onremove={() => session.removeFromQueue(i)}
-          onreorder={(from, to) => session.reorderQueue(from, to)}
-        />
-      {/each}
-    </ol>
-  {/if}
+  <!-- list and empty state share one grid cell, so clearing crossfades
+       on opacity/transform alone instead of collapsing every row -->
+  <div class="queue-body">
+    {#if view.queue.length === 0}
+      <div class="empty" in:rise={{ y: 8, blur: 0, delay: 60 }}>
+        <div class="empty-reel" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p>The reel is empty.</p>
+        <span>Queue a link and it lines up here, playing in order.</span>
+      </div>
+    {:else}
+      <ol class="queue-list" out:fade={{ duration: 150 }}>
+        {#each view.queue as id, i (id)}
+          <QueueRow
+            {id}
+            index={i}
+            active={i === view.queueIndex}
+            playing={i === view.queueIndex && view.isPlaying}
+            onplay={() => session.loadVideo(id)}
+            onremove={() => session.removeFromQueue(i)}
+            onreorder={(from, to) => session.reorderQueue(from, to)}
+          />
+        {/each}
+      </ol>
+    {/if}
+  </div>
 </section>

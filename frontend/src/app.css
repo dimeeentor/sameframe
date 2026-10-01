@@ -1037,6 +1037,16 @@ button {
   }
 }
 
+.queue-body {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.queue-body > * {
+  grid-area: 1 / 1;
+}
+
 .queue-list {
   display: flex;
   flex-direction: column;
@@ -1314,28 +1324,25 @@ button {
   }
 }
 
+/* no backdrop-filter: the stage keeps animating behind the gate, and Safari
+   would re-blur the whole viewport every frame */
 .gate::backdrop {
-  background: rgba(10, 7, 4, 0);
-  -webkit-backdrop-filter: blur(0);
-  backdrop-filter: blur(0);
+  background: rgba(10, 7, 4, 0.62);
+  opacity: 0;
   transition:
-    background-color 180ms ease,
-    backdrop-filter 180ms ease,
+    opacity 180ms ease,
     overlay 180ms allow-discrete,
     display 180ms allow-discrete;
 }
 
 .gate[open]::backdrop {
-  background: rgba(10, 7, 4, 0.55);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  opacity: 1;
   transition-duration: 380ms;
 }
 
 @starting-style {
   .gate[open]::backdrop {
-    background: rgba(10, 7, 4, 0);
-    backdrop-filter: blur(0);
+    opacity: 0;
   }
 }
 
@@ -1437,7 +1444,6 @@ button {
   from {
     opacity: 0;
     transform: translateY(8px);
-    filter: blur(4px);
   }
 }
 

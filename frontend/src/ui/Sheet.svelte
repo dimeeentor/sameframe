@@ -11,6 +11,7 @@ let dragging = false
 let startY = 0
 let startT = 0
 let dy = 0
+let height = 0
 
 function onpointerdown(e: PointerEvent) {
   if (dragging || !panel || e.button !== 0) return
@@ -18,6 +19,7 @@ function onpointerdown(e: PointerEvent) {
   startY = e.clientY
   startT = performance.now()
   dy = 0
+  height = panel.offsetHeight
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   panel.style.transition = "none"
   if (scrim) scrim.style.transition = "none"
@@ -28,14 +30,14 @@ function onpointermove(e: PointerEvent) {
   const raw = e.clientY - startY
   dy = raw < 0 ? -Math.pow(-raw, 0.62) : raw
   panel.style.transform = `translateY(${dy}px)`
-  if (scrim) scrim.style.opacity = String(1 - Math.max(0, dy) / panel.offsetHeight)
+  if (scrim) scrim.style.opacity = String(1 - Math.max(0, dy) / height)
 }
 
 function onpointerup() {
   if (!dragging || !panel) return
   dragging = false
   const velocity = Math.abs(dy) / (performance.now() - startT)
-  const dismiss = dy > panel.offsetHeight * 0.3 || (dy > 12 && velocity > 0.11)
+  const dismiss = dy > height * 0.3 || (dy > 12 && velocity > 0.11)
   panel.style.transition = ""
   panel.style.transform = ""
   if (scrim) {
