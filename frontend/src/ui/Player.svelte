@@ -23,41 +23,37 @@ const gateHint = $derived(
 )
 </script>
 
-{#snippet placeholder(eyebrow: string, heading: string, body: string, join: boolean)}
-  <div class="placeholder" out:fade={{ duration: 260 }}>
-    <div class="leader" aria-hidden="true">
-      <span class="leader-sweep"></span>
-      <span class="leader-ring"></span>
-      <span class="leader-ring inner"></span>
-      <span class="leader-cross"></span>
-    </div>
-    <div class="placeholder-inner">
-      <span class="eyebrow">{eyebrow}</span>
-      <h2>{heading}</h2>
-      <p>{body}</p>
-      {#if join}
-        <button class="btn primary large" type="button" onclick={() => session.join()}>
-          Join room
-        </button>
-      {/if}
-    </div>
-  </div>
-{/snippet}
-
 <div class="stage" class:playing={view.isPlaying && !!view.videoId} bind:clientHeight={stageHeight}>
   <div class="frame">
     <div class="player-wrap">
       <div bind:this={host} id="player"></div>
 
-      {#if !view.joined}
-        {@render placeholder("Reel 00 · Standby", "Watch together", gateHint, true)}
-      {:else if !view.videoId}
-        {@render placeholder(
-          "Reel 00 · Empty",
-          "Nothing on screen yet",
-          "Paste a YouTube link to start the show.",
-          false,
-        )}
+      <!-- one persistent placeholder so the leader keeps sweeping while only the copy swaps -->
+      {#if !view.joined || !view.videoId}
+        <div class="placeholder" in:fade={{ duration: 200 }} out:fade={{ duration: 260 }}>
+          <div class="leader" aria-hidden="true">
+            <span class="leader-sweep"></span>
+            <span class="leader-ring"></span>
+            <span class="leader-ring inner"></span>
+            <span class="leader-cross"></span>
+          </div>
+          {#key view.joined}
+            <div class="placeholder-inner" in:swap>
+              {#if !view.joined}
+                <span class="eyebrow">Reel 00 · Standby</span>
+                <h2>Watch together</h2>
+                <p>{gateHint}</p>
+                <button class="btn primary large" type="button" onclick={() => session.join()}>
+                  Join room
+                </button>
+              {:else}
+                <span class="eyebrow">Reel 00 · Empty</span>
+                <h2>Nothing on screen yet</h2>
+                <p>Paste a YouTube link to start the show.</p>
+              {/if}
+            </div>
+          {/key}
+        </div>
       {/if}
     </div>
   </div>
