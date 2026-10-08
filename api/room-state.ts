@@ -20,6 +20,8 @@ export type RoomState = {
   updatedAt: number
   queue: VideoId[]
   queueIndex: number
+  /** playback revision: bumped on every transition that changes playback */
+  rev: number
 }
 
 export function emptyRoomState(code: RoomCode): RoomState {
@@ -34,6 +36,7 @@ export function emptyRoomState(code: RoomCode): RoomState {
     updatedAt: now,
     queue: [],
     queueIndex: -1,
+    rev: 0,
   }
 }
 
@@ -51,6 +54,7 @@ export function getSyncPayload(s: RoomState): ServerMsg {
     currentTime: estimatedTime(s),
     isPlaying: s.isPlaying,
     playbackRate: s.playbackRate,
+    rev: s.rev,
     queue: s.queue,
     queueIndex: s.queueIndex,
   }
@@ -80,6 +84,7 @@ function loadMsg(s: RoomState, videoId: VideoId): ServerMsg {
     videoId,
     currentTime: 0,
     isPlaying: true,
+    rev: s.rev,
     queue: s.queue,
     queueIndex: s.queueIndex,
   }
@@ -98,6 +103,7 @@ function loadSurvivor(s: RoomState, index: number): Transition {
     currentTime: 0,
     isPlaying: true,
     updatedAt: Date.now(),
+    rev: s.rev + 1,
   }
   return {
     next,
@@ -115,6 +121,7 @@ function advanceTo(s: RoomState, index: number): RoomState | null {
     currentTime: 0,
     isPlaying: true,
     updatedAt: Date.now(),
+    rev: s.rev + 1,
   }
 }
 
@@ -134,6 +141,7 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         currentTime: 0,
         isPlaying: true,
         updatedAt: Date.now(),
+        rev: s.rev + 1,
       }
       return {
         next,
@@ -156,6 +164,7 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         currentTime: 0,
         isPlaying: true,
         updatedAt: Date.now(),
+        rev: added.rev + 1,
       }
       return {
         next,
@@ -199,14 +208,18 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         currentTime: msg.currentTime,
         isPlaying: true,
         updatedAt: Date.now(),
+        rev: s.rev + 1,
       }
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: { type: "play", currentTime: next.currentTime },
-          excludeSelf: true,
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: { type: "play", currentTime: next.currentTime, rev: next.rev },
+            excludeSelf: true,
+          },
+          { kind: "reply", msg: { type: "ack", rev: next.rev } },
+        ],
       }
     }
     case "pause": {
@@ -215,14 +228,18 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         currentTime: msg.currentTime,
         isPlaying: false,
         updatedAt: Date.now(),
+        rev: s.rev + 1,
       }
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: { type: "pause", currentTime: next.currentTime },
-          excludeSelf: true,
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: { type: "pause", currentTime: next.currentTime, rev: next.rev },
+            excludeSelf: true,
+          },
+          { kind: "reply", msg: { type: "ack", rev: next.rev } },
+        ],
       }
     }
     case "seek": {
@@ -230,14 +247,18 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         ...s,
         currentTime: msg.currentTime,
         updatedAt: Date.now(),
+        rev: s.rev + 1,
       }
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: { type: "seek", currentTime: next.currentTime },
-          excludeSelf: true,
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: { type: "seek", currentTime: next.currentTime, rev: next.rev },
+            excludeSelf: true,
+          },
+          { kind: "reply", msg: { type: "ack", rev: next.rev } },
+        ],
       }
     }
     case "rate": {
@@ -247,14 +268,18 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         playbackRate: msg.playbackRate,
         currentTime: estimatedTime(s),
         updatedAt: Date.now(),
+        rev: s.rev + 1,
       }
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: { type: "rate", playbackRate: next.playbackRate },
-          excludeSelf: true,
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: { type: "rate", playbackRate: next.playbackRate, rev: next.rev },
+            excludeSelf: true,
+          },
+          { kind: "reply", msg: { type: "ack", rev: next.rev } },
+        ],
       }
     }
     case "ended": {
