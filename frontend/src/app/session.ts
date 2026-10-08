@@ -48,6 +48,7 @@ type SessionState = {
   lastResyncAt: number
   roomCode: RoomCode | null
   joined: boolean
+  rev: number
 }
 
 const TICK_MS = 400
@@ -61,6 +62,12 @@ const INDUCED_MS = 1200
 const LOAD_SUPPRESS_MS = 1500
 const RESYNC_DRIFT = 2
 const RESYNC_COOLDOWN_MS = 5000
+// after a remote play/pause, a player that hasn't followed yet (slow buffering,
+// blocked autoplay) is retried locally instead of echoed back as a user action
+const FOLLOW_GRACE_MS = 4000
+// safety-net resync; each sync_request wakes the hibernating DO, so not more often
+const SYNC_EVERY_MS = 20000
+const SYNC_QUIET_MS = 3000
 
 export function createSession(
   transport: Transport,
@@ -81,12 +88,15 @@ export function createSession(
     lastResyncAt: 0,
     roomCode,
     joined: false,
+    rev: 0,
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
   let pauseAfterLoad: ReturnType<typeof setTimeout> | null = null
   let playerHost: HTMLElement | null = null
   let started = false
+  let lastSyncAt = 0
+  let lastCommandAt = 0
 
   function publish() {
     const snap: SyncSnapshot = {
@@ -113,7 +123,11 @@ export function createSession(
   }
 
   function send(msg: ClientMsg) {
-    transport.send(msg)
+    // playback commands carry the last rev seen so the server can reject stale ones
+    const playback =
+      msg.type === "play" || msg.type === "pause" || msg.type === "seek" || msg.type === "rate"
+    if (playback || msg.type === "load") lastCommandAt = Date.now()
+    transport.send(playback ? { ...msg, rev: s.rev } : msg)
   }
 
   function mergeQueue(queue: VideoId[], queueIndex: number) {
@@ -123,6 +137,21 @@ export function createSession(
 
   let lastRemote: { time: number; at: number; playing: boolean } | null = null
   let anchorOnPlay = false
+  let remoteChangeAt = 0
+
+  function followingRemote(): boolean {
+    return Date.now() - remoteChangeAt < FOLLOW_GRACE_MS
+  }
+
+  function enforce() {
+    if (s.isPlaying) {
+      suppress(INDUCED_PLAY_MS)
+      player.play()
+    } else {
+      suppress(INDUCED_MS)
+      player.pause()
+    }
+  }
 
   function noteRemote(time: number, playing: boolean) {
     lastRemote = { time, at: Date.now(), playing }
@@ -164,6 +193,7 @@ export function createSession(
     s.videoId = videoId
     s.isPlaying = isPlaying
     anchorOnPlay = currentTime === 0
+    remoteChangeAt = Date.now()
     if (pauseAfterLoad) {
       clearTimeout(pauseAfterLoad)
       pauseAfterLoad = null
@@ -202,6 +232,7 @@ export function createSession(
       : st === "playing" || st === "buffering"
     if (remotePlaying === effective) return
     s.isPlaying = remotePlaying
+    remoteChangeAt = Date.now()
     if (remotePlaying) {
       suppress(INDUCED_PLAY_MS)
       player.play()
@@ -212,6 +243,7 @@ export function createSession(
   }
 
   function reduce(m: ServerMsg) {
+    if ("rev" in m) s.rev = m.rev
     switch (m.type) {
       case "load":
         if (m.queue.length) mergeQueue(m.queue, m.queueIndex)
@@ -253,6 +285,8 @@ export function createSession(
       case "clients":
         s.viewerCount = m.count
         break
+      case "ack":
+        break
       default: {
         const _exhaustive: never = m
         void _exhaustive
@@ -291,20 +325,31 @@ export function createSession(
       if (st === "playing" || st === "paused") {
         const playing = st === "playing"
         if (playing !== s.isPlaying) {
-          s.isPlaying = playing
-          noteRemote(t, playing)
-          send({ type: playing ? "play" : "pause", currentTime: t })
-          publish()
+          if (followingRemote()) enforce()
+          else {
+            s.isPlaying = playing
+            noteRemote(t, playing)
+            send({ type: playing ? "play" : "pause", currentTime: t })
+            publish()
+          }
         }
       }
     }
     s.lastTickTime = t
     s.lastTickAt = now
+    if (
+      s.joined && s.videoId && s.connection === "open" && !isSuppressed() &&
+      now - lastSyncAt >= SYNC_EVERY_MS && now - lastCommandAt >= SYNC_QUIET_MS
+    ) {
+      send({ type: "sync_request" })
+      lastSyncAt = now
+    }
   }
 
   function onPlayerEvent(e: PlayerEvent) {
     if (e.kind === "ready") {
       send({ type: "sync_request" })
+      lastSyncAt = Date.now()
       return
     }
     if (e.kind === "autoplayBlocked") {
@@ -342,11 +387,13 @@ export function createSession(
     const t = player.currentTime()
     if (e.state === "playing") {
       if (s.isPlaying) return
+      if (followingRemote()) return enforce()
       s.isPlaying = true
       noteRemote(t, true)
       send({ type: "play", currentTime: t })
     } else if (e.state === "paused") {
       if (!s.isPlaying) return
+      if (followingRemote()) return enforce()
       s.isPlaying = false
       noteRemote(t, false)
       send({ type: "pause", currentTime: t })

@@ -29,6 +29,9 @@ export class RoomDurableObject extends DurableObject<Env> {
   /** when touchAlarm last wrote. Resets to 0 on a hibernation wake, which only
    *  costs one extra setAlarm. */
   private alarmSetAt = 0
+  /** socket whose message last bumped rev. Lost on a hibernation wake, which
+   *  only makes the stale check stricter. */
+  private lastWriter: WebSocket | null = null
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
@@ -59,7 +62,9 @@ export class RoomDurableObject extends DurableObject<Env> {
    *  and write below is a plain call: no await anywhere on the message path. */
   private getState(): RoomState | null {
     const existing = this.ctx.storage.kv.get<RoomState>(STATE_KEY)
-    return existing && isRoomState(existing) ? existing : null
+    if (!existing || !isRoomState(existing)) return null
+    // state stored before rev existed
+    return typeof existing.rev === "number" ? existing : { ...existing, rev: 0 }
   }
 
   /** Writes are not awaited: the output gate holds outgoing messages until they
@@ -174,9 +179,24 @@ export class RoomDurableObject extends DurableObject<Env> {
       return
     }
 
+    // playback commands carry the rev the sender last saw. A mismatch means
+    // another client changed playback first, so applying it would clobber that
+    // with a command based on stale state: resync the sender instead. The last
+    // writer may override itself, since a play then pause faster than one RTT
+    // both carry the same base rev.
+    if (
+      (msg.type === "play" || msg.type === "pause" || msg.type === "seek" ||
+        msg.type === "rate") &&
+      msg.rev !== undefined && msg.rev !== state.rev && ws !== this.lastWriter
+    ) {
+      reply(getSyncPayload(state))
+      return
+    }
+
     const { next, effects } = applyClientMsg(state, msg)
     if (next === null || next === state) return
     this.putState(next)
+    if (next.rev !== state.rev) this.lastWriter = ws
 
     for (const effect of effects) {
       if (effect.kind === "broadcast") {

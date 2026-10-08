@@ -29,6 +29,7 @@ export type ServerMsg =
     videoId: VideoId
     currentTime: number
     isPlaying: boolean
+    rev: number
     queue: VideoId[]
     queueIndex: number
   }
@@ -39,13 +40,15 @@ export type ServerMsg =
     currentTime: number
     isPlaying: boolean
     playbackRate: number
+    rev: number
     queue: VideoId[]
     queueIndex: number
   }
-  | { type: "play"; currentTime: number }
-  | { type: "pause"; currentTime: number }
-  | { type: "seek"; currentTime: number }
-  | { type: "rate"; playbackRate: number }
+  | { type: "play"; currentTime: number; rev: number }
+  | { type: "pause"; currentTime: number; rev: number }
+  | { type: "seek"; currentTime: number; rev: number }
+  | { type: "rate"; playbackRate: number; rev: number }
+  | { type: "ack"; rev: number }
 
 export type ClientMsg =
   | { type: "load"; videoId: VideoId }
@@ -53,10 +56,10 @@ export type ClientMsg =
   | { type: "queue_remove"; index: number }
   | { type: "queue_reorder"; from: number; to: number }
   | { type: "queue_clear" }
-  | { type: "play"; currentTime: number }
-  | { type: "pause"; currentTime: number }
-  | { type: "seek"; currentTime: number }
-  | { type: "rate"; playbackRate: number }
+  | { type: "play"; currentTime: number; rev?: number }
+  | { type: "pause"; currentTime: number; rev?: number }
+  | { type: "seek"; currentTime: number; rev?: number }
+  | { type: "rate"; playbackRate: number; rev?: number }
   | { type: "ended"; videoId: VideoId }
   | { type: "sync_request" }
 
@@ -73,6 +76,11 @@ function asQueue(v: unknown): VideoId[] {
 
 function num(v: unknown, fallback: number): number {
   return typeof v === "number" && Number.isFinite(v) ? v : fallback
+}
+
+/** the last rev the client saw; omitted when absent so old clients still work */
+function optRev(v: unknown): { rev?: number } {
+  return typeof v === "number" && Number.isFinite(v) ? { rev: v } : {}
 }
 
 function isIndex(v: unknown): v is number {
@@ -97,6 +105,7 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
         videoId,
         currentTime: num(m.currentTime, 0),
         isPlaying: m.isPlaying !== false,
+        rev: num(m.rev, 0),
         queue: asQueue(m.queue),
         queueIndex: num(m.queueIndex, -1),
       }
@@ -116,18 +125,39 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
         currentTime: num(m.currentTime, 0),
         isPlaying: m.isPlaying === true,
         playbackRate: num(m.playbackRate, 1),
+        rev: num(m.rev, 0),
         queue: asQueue(m.queue),
         queueIndex: num(m.queueIndex, -1),
       }
     }
     case "play":
-      return { type: "play", currentTime: num(m.currentTime, 0) }
+      return {
+        type: "play",
+        currentTime: num(m.currentTime, 0),
+        rev: num(m.rev, 0),
+      }
     case "pause":
-      return { type: "pause", currentTime: num(m.currentTime, 0) }
+      return {
+        type: "pause",
+        currentTime: num(m.currentTime, 0),
+        rev: num(m.rev, 0),
+      }
     case "seek":
-      return { type: "seek", currentTime: num(m.currentTime, 0) }
+      return {
+        type: "seek",
+        currentTime: num(m.currentTime, 0),
+        rev: num(m.rev, 0),
+      }
     case "rate":
-      return { type: "rate", playbackRate: num(m.playbackRate, 1) }
+      return {
+        type: "rate",
+        playbackRate: num(m.playbackRate, 1),
+        rev: num(m.rev, 0),
+      }
+    case "ack":
+      return typeof m.rev === "number" && Number.isFinite(m.rev)
+        ? { type: "ack", rev: m.rev }
+        : null
     default:
       return null
   }
@@ -152,16 +182,18 @@ export function parseClientMsg(raw: unknown): ClientMsg | null {
     case "queue_clear":
       return { type: "queue_clear" }
     case "play":
-      return { type: "play", currentTime: num(m.currentTime, 0) }
     case "pause":
-      return { type: "pause", currentTime: num(m.currentTime, 0) }
     case "seek":
-      return { type: "seek", currentTime: num(m.currentTime, 0) }
+      return {
+        type: m.type,
+        currentTime: num(m.currentTime, 0),
+        ...optRev(m.rev),
+      }
     case "rate":
       return typeof m.playbackRate === "number" &&
           Number.isFinite(m.playbackRate) &&
           m.playbackRate > 0
-        ? { type: "rate", playbackRate: m.playbackRate }
+        ? { type: "rate", playbackRate: m.playbackRate, ...optRev(m.rev) }
         : null
     case "ended": {
       // named so the server can drop the reports that lose the race
