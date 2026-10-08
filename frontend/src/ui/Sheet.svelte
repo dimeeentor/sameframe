@@ -49,10 +49,7 @@ function onpointerup() {
 
 $effect(() => {
   if (!open) return
-  const root = document.documentElement
-  root.classList.add("scroll-locked")
   panel?.focus({ preventScroll: true })
-  return () => root.classList.remove("scroll-locked")
 })
 </script>
 
