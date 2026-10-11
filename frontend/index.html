@@ -18,12 +18,6 @@
         ? "light"
         : "dark"
       document.documentElement.dataset.theme = theme
-      // Safari tints its chrome from theme-color; without it, it samples the
-      // page and lands on white. Values mirror --bg in app.css.
-      const meta = document.createElement("meta")
-      meta.name = "theme-color"
-      meta.content = theme === "light" ? "#f3efe7" : "#0d0c0b"
-      document.head.appendChild(meta)
     }
     </script>
   </head>
