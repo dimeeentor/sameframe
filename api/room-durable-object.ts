@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers"
-import { isRoomCode, parseClientMsg } from "../shared/messages.ts"
-import type { RoomCode } from "../shared/messages.ts"
+import { CLIENT_ID_RE, isRoomCode, parseClientMsg } from "../shared/messages.ts"
+import type { ClientInfo, RoomCode } from "../shared/messages.ts"
 import { applyClientMsg, emptyRoomState, getSyncPayload, type RoomState } from "./room-state.ts"
 import type { Env } from "./env.ts"
 
@@ -9,6 +9,7 @@ const ROOM_TTL_MS = 24 * 60 * 60 * 1000 // 24h
 // second storage write per message. Hourly is close enough for a 24h expiry.
 const ALARM_REFRESH_MS = 60 * 60 * 1000
 const STATE_KEY = "state"
+const OWNER_KEY = "ownerToken"
 
 // the runtime answers these from its table without waking a hibernating
 // object, so clients can hold the socket open through idle proxies for free
@@ -16,7 +17,7 @@ const PING = JSON.stringify({ type: "ping" })
 const PONG = JSON.stringify({ type: "pong" })
 const STALE_MS = 40 * 1000
 
-type SocketMeta = { connectedAt: number }
+type SocketMeta = { connectedAt: number; clientId: string; label: string; isOwner: boolean }
 
 function isRoomState(v: unknown): v is RoomState {
   if (typeof v !== "object" || v === null) return false
@@ -45,7 +46,7 @@ export class RoomDurableObject extends DurableObject<Env> {
 
     if (request.headers.get("Upgrade") === "websocket") {
       if (!code) return new Response("missing room code", { status: 400 })
-      return this.handleWebSocketUpgrade(code)
+      return this.handleWebSocketUpgrade(code, url)
     }
     if (url.pathname === "/create" && request.method === "POST") {
       if (!code) return new Response("missing room code", { status: 400 })
@@ -92,14 +93,27 @@ export class RoomDurableObject extends DurableObject<Env> {
   private handleCreate(code: RoomCode): Response {
     if (this.getState()) return new Response(null, { status: 409 })
     const state = this.ensureRoom(code)
-    return Response.json({ code: state.code, createdAt: state.createdAt }, { status: 201 })
+    const ownerToken = crypto.randomUUID()
+    this.ctx.storage.kv.put(OWNER_KEY, ownerToken)
+    return Response.json(
+      { code: state.code, createdAt: state.createdAt, ownerToken },
+      { status: 201 },
+    )
   }
 
-  private handleWebSocketUpgrade(code: RoomCode): Response {
+  private handleWebSocketUpgrade(code: RoomCode, url: URL): Response {
+    const idParam = url.searchParams.get("clientId")
+    const clientId = idParam && CLIENT_ID_RE.test(idParam) ? idParam : crypto.randomUUID()
+    const label = (url.searchParams.get("label") ?? "").trim().slice(0, 40) || "Viewer"
+    const token = url.searchParams.get("owner")
+    const isOwner = !!token && token === this.ctx.storage.kv.get<string>(OWNER_KEY)
+
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     this.ctx.acceptWebSocket(server)
-    server.serializeAttachment({ connectedAt: Date.now() } satisfies SocketMeta)
+    server.serializeAttachment(
+      { connectedAt: Date.now(), clientId, label, isOwner } satisfies SocketMeta,
+    )
 
     server.send(JSON.stringify(getSyncPayload(this.ensureRoom(code))))
     this.broadcastClientCount()
@@ -114,10 +128,11 @@ export class RoomDurableObject extends DurableObject<Env> {
     return now - Math.max(meta?.connectedAt ?? 0, lastPing) > STALE_MS
   }
 
-  private liveSockets(exclude?: WebSocket): WebSocket[] {
+  private liveSockets(exclude?: WebSocket | WebSocket[]): WebSocket[] {
+    const skip = Array.isArray(exclude) ? exclude : [exclude]
     const now = Date.now()
     return this.ctx.getWebSockets().filter((s) => {
-      if (s === exclude || s.readyState !== WebSocket.OPEN) return false
+      if (skip.includes(s) || s.readyState !== WebSocket.OPEN) return false
       if (!this.isStale(s, now)) return true
       try {
         s.close(4000, "stale")
@@ -128,12 +143,20 @@ export class RoomDurableObject extends DurableObject<Env> {
 
   /** `exclude` is the socket this event is about: getWebSockets() can still
    *  return a socket that is closing, which would report one viewer too many. */
-  private broadcastClientCount(exclude?: WebSocket) {
+  private broadcastClientCount(exclude?: WebSocket | WebSocket[]) {
     const live = this.liveSockets(exclude)
-    const data = JSON.stringify({ type: "clients", count: live.length })
-    for (const socket of live) {
+    const infos = live.map((s) => {
+      const meta = s.deserializeAttachment() as SocketMeta | null
+      return {
+        id: meta?.clientId ?? "",
+        label: meta?.label ?? "Viewer",
+        isOwner: meta?.isOwner === true,
+      }
+    })
+    for (const [i, socket] of live.entries()) {
+      const clients: ClientInfo[] = infos.map((c, j) => ({ ...c, isYou: i === j }))
       try {
-        socket.send(data)
+        socket.send(JSON.stringify({ type: "clients", count: live.length, clients }))
       } catch {
         // dead socket; webSocketClose/webSocketError will prune it
       }
@@ -169,6 +192,22 @@ export class RoomDurableObject extends DurableObject<Env> {
       } catch {
         // dead socket
       }
+    }
+
+    if (msg.type === "kick") {
+      const me = ws.deserializeAttachment() as SocketMeta | null
+      if (!me?.isOwner || msg.clientId === me.clientId) return
+      const kicked = this.ctx.getWebSockets().filter((s) =>
+        (s.deserializeAttachment() as SocketMeta | null)?.clientId === msg.clientId
+      )
+      for (const s of kicked) {
+        try {
+          s.send(JSON.stringify({ type: "kicked" }))
+          s.close(4003, "kicked")
+        } catch {}
+      }
+      this.broadcastClientCount(kicked)
+      return
     }
 
     const state = this.getState()
