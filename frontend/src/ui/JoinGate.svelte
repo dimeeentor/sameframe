@@ -33,14 +33,12 @@ function join() {
     </div>
 
     <div class="ticket-stub">
-      {#if code}
-        <span class="eyebrow">Room</span>
-        <div class="gate-code" aria-label="Room {code}">
-          {#each code.split("") as ch, i (i)}
-            <span style="--i: {i}">{ch}</span>
-          {/each}
-        </div>
-      {/if}
+      <span class="eyebrow">Room</span>
+      <div class="gate-code" aria-label={code ? `Room ${code}` : undefined}>
+        {#each { length: 6 }, i (i)}
+          <span style="--i: {i}">{code?.[i] ?? ""}</span>
+        {/each}
+      </div>
       <button class="btn primary large block gate-join" type="button" onclick={join}>
         Join room
       </button>
