@@ -28,7 +28,10 @@ const connText = $derived(
 
 {#snippet presenceBody()}
   <span class="presence-dot" aria-hidden="true"></span>
-  <span class="presence-conn">{connText}</span>
+  <span class="presence-conn">
+    <span aria-hidden="true">Connecting</span>
+    <span class="shown">{connText}</span>
+  </span>
   <span class="presence-sep" aria-hidden="true"></span>
   <span class="presence-count">
     {#key view.viewerCount}
@@ -106,12 +109,10 @@ const connText = $derived(
 
     <div class="topbar-actions">
       <ThemeSwitch />
-      {#if view.roomCode}
-        <span class="room-chip" title="Room code">
-          <span class="room-chip-label">Room</span>
-          {view.roomCode}
-        </span>
-      {/if}
+      <span class="room-chip" title="Room code">
+        <span class="room-chip-label">Room</span>
+        {view.roomCode ?? "······"}
+      </span>
       <InviteButton />
     </div>
   </header>
