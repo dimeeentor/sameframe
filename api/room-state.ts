@@ -61,7 +61,7 @@ export function getSyncPayload(s: RoomState): ServerMsg {
 }
 
 /** Everything a client can command that mutates room state. */
-export type ClientCommand = Exclude<ClientMsg, { type: "sync_request" }>
+export type ClientCommand = Exclude<ClientMsg, { type: "sync_request" | "kick" }>
 
 /** Outgoing message from a transition: broadcast to the room (optionally not
  *  to the acting client, which already applied it locally), or reply to the

@@ -22,8 +22,18 @@ export type RoomMetadata = {
   createdAt: number
 }
 
+export const CLIENT_ID_RE = /^[A-Za-z0-9_-]{1,64}$/
+
+export type ClientInfo = {
+  id: string
+  label: string
+  isOwner: boolean
+  isYou: boolean
+}
+
 export type ServerMsg =
-  | { type: "clients"; count: number }
+  | { type: "clients"; count: number; clients: ClientInfo[] }
+  | { type: "kicked" }
   | {
     type: "load"
     videoId: VideoId
@@ -62,6 +72,7 @@ export type ClientMsg =
   | { type: "rate"; playbackRate: number; rev?: number }
   | { type: "ended"; videoId: VideoId }
   | { type: "sync_request" }
+  | { type: "kick"; clientId: string }
 
 function asId(v: unknown): VideoId | null {
   return typeof v === "string" && VIDEO_ID_RE.test(v) ? (v as VideoId) : null
@@ -87,6 +98,23 @@ function isIndex(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0
 }
 
+function asClients(v: unknown): ClientInfo[] {
+  if (!Array.isArray(v)) return []
+  const out: ClientInfo[] = []
+  for (const x of v) {
+    if (typeof x !== "object" || x === null) continue
+    const c = x as Record<string, unknown>
+    if (typeof c.id !== "string" || typeof c.label !== "string") continue
+    out.push({
+      id: c.id,
+      label: c.label,
+      isOwner: c.isOwner === true,
+      isYou: c.isYou === true,
+    })
+  }
+  return out
+}
+
 /** Boundary validation, server → client: null on anything unexpected
  *  (dropped upstream). */
 export function parseServerMsg(raw: unknown): ServerMsg | null {
@@ -95,8 +123,10 @@ export function parseServerMsg(raw: unknown): ServerMsg | null {
   switch (m.type) {
     case "clients":
       return typeof m.count === "number"
-        ? { type: "clients", count: m.count }
+        ? { type: "clients", count: m.count, clients: asClients(m.clients) }
         : null
+    case "kicked":
+      return { type: "kicked" }
     case "load": {
       const videoId = asId(m.videoId)
       if (!videoId) return null
@@ -202,6 +232,10 @@ export function parseClientMsg(raw: unknown): ClientMsg | null {
     }
     case "sync_request":
       return { type: "sync_request" }
+    case "kick":
+      return typeof m.clientId === "string" && CLIENT_ID_RE.test(m.clientId)
+        ? { type: "kick", clientId: m.clientId }
+        : null
     default:
       return null
   }
