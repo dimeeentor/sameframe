@@ -6,8 +6,9 @@ let dismissed = $state(false)
 
 $effect(() => {
   if (!dialog || dismissed) return
-  if (!view.joined && !dialog.open) dialog.showModal()
-  else if (view.joined && dialog.open) dialog.close()
+  const show = !view.joined && !view.kicked
+  if (show && !dialog.open) dialog.showModal()
+  else if (!show && dialog.open) dialog.close()
 })
 
 const code = $derived(view.roomCode ?? session.roomCode)

@@ -6,12 +6,14 @@ import Icon from "./Icon.svelte"
 import InviteButton from "./InviteButton.svelte"
 import RoomTools from "./RoomTools.svelte"
 import Sheet from "./Sheet.svelte"
+import ViewersSheet from "./ViewersSheet.svelte"
 import ThemeSwitch from "./ThemeSwitch.svelte"
 import { rise } from "./motion"
 
 let { children }: { children?: Snippet } = $props()
 
 let menuOpen = $state(false)
+let viewersOpen = $state(false)
 
 const connText = $derived(
   view.connection === "open"
@@ -24,18 +26,35 @@ const connText = $derived(
 )
 </script>
 
+{#snippet presenceBody()}
+  <span class="presence-dot" aria-hidden="true"></span>
+  <span class="presence-conn">{connText}</span>
+  <span class="presence-sep" aria-hidden="true"></span>
+  <span class="presence-count">
+    {#key view.viewerCount}
+      <span class="presence-num" in:rise={{ y: 6, blur: 2, duration: 240 }}>{view.viewerCount}</span>
+    {/key}
+    <span class="presence-label">watching</span>
+  </span>
+{/snippet}
+
 {#snippet presence()}
-  <div class="presence" data-conn={view.connection} title="Connection status and viewers">
-    <span class="presence-dot" aria-hidden="true"></span>
-    <span class="presence-conn">{connText}</span>
-    <span class="presence-sep" aria-hidden="true"></span>
-    <span class="presence-count">
-      {#key view.viewerCount}
-        <span class="presence-num" in:rise={{ y: 6, blur: 2, duration: 240 }}>{view.viewerCount}</span>
-      {/key}
-      <span class="presence-label">watching</span>
-    </span>
-  </div>
+  {#if view.isOwner}
+    <button
+      class="presence presence-btn"
+      type="button"
+      data-conn={view.connection}
+      title="Manage viewers"
+      aria-label="Manage viewers"
+      onclick={() => (viewersOpen = true)}
+    >
+      {@render presenceBody()}
+    </button>
+  {:else}
+    <div class="presence" data-conn={view.connection} title="Connection status and viewers">
+      {@render presenceBody()}
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet wordmark()}
@@ -97,3 +116,24 @@ const connText = $derived(
     </div>
   </header>
 {/if}
+
+{#if view.isOwner}
+  <ViewersSheet open={viewersOpen} onclose={() => (viewersOpen = false)} />
+{/if}
+
+<style>
+.presence-btn {
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.presence-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.presence-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>

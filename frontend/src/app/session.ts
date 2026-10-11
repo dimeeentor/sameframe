@@ -10,6 +10,7 @@ import {
   type ConnectionStatus,
   type RoomCode,
   type SyncSnapshot,
+  type Viewer,
   type VideoId,
 } from "./domain.ts"
 import type { ClientMsg, ServerMsg } from "./wire.ts"
@@ -32,6 +33,7 @@ export type Session = {
   togglePlay(): void
   seekBy(delta: number): void
   toggleFullscreen(): void
+  kick(clientId: string): void
 }
 
 type SessionState = {
@@ -49,6 +51,9 @@ type SessionState = {
   roomCode: RoomCode | null
   joined: boolean
   rev: number
+  viewers: Viewer[]
+  isOwner: boolean
+  kicked: boolean
 }
 
 const TICK_MS = 400
@@ -89,6 +94,9 @@ export function createSession(
     roomCode,
     joined: false,
     rev: 0,
+    viewers: [],
+    isOwner: false,
+    kicked: false,
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
@@ -110,6 +118,9 @@ export function createSession(
       connection: s.connection,
       roomCode: s.roomCode,
       joined: s.joined,
+      viewers: [...s.viewers],
+      isOwner: s.isOwner,
+      kicked: s.kicked,
     }
     subs.forEach((cb) => cb(snap))
   }
@@ -284,7 +295,12 @@ export function createSession(
         break
       case "clients":
         s.viewerCount = m.count
+        s.viewers = m.clients
+        s.isOwner = m.clients.some((c) => c.isYou && c.isOwner)
         break
+      case "kicked":
+        onKicked()
+        return
       case "ack":
         break
       default: {
@@ -403,6 +419,19 @@ export function createSession(
     publish()
   }
 
+  function onKicked() {
+    if (s.kicked) return
+    s.kicked = true
+    player.destroy()
+    stop()
+    s.joined = false
+    publish()
+  }
+
+  function kick(clientId: string) {
+    send({ type: "kick", clientId })
+  }
+
   // --- commands: optimistic state + suppression + transport.send ---
 
   function join() {
@@ -505,11 +534,24 @@ export function createSession(
     player.toggleFullscreen()
   }
 
+  function stop() {
+    started = false
+    timers.forEach(clearInterval)
+    timers.length = 0
+    // outlives the intervals, and a stopped session must not drive the player
+    if (pauseAfterLoad) {
+      clearTimeout(pauseAfterLoad)
+      pauseAfterLoad = null
+    }
+    transport.stop()
+  }
+
   return {
     start() {
       if (started) return
       started = true
       transport.onMessage(reduce)
+      transport.onKicked(() => onKicked())
       transport.onStatus((st) => {
         s.connection = st
         publish()
@@ -518,17 +560,7 @@ export function createSession(
       transport.start()
       timers.push(setInterval(tick, TICK_MS))
     },
-    stop() {
-      started = false
-      timers.forEach(clearInterval)
-      timers.length = 0
-      // outlives the intervals, and a stopped session must not drive the player
-      if (pauseAfterLoad) {
-        clearTimeout(pauseAfterLoad)
-        pauseAfterLoad = null
-      }
-      transport.stop()
-    },
+    stop,
     attachPlayer(host) {
       playerHost = host
     },
@@ -545,5 +577,6 @@ export function createSession(
     togglePlay,
     seekBy,
     toggleFullscreen,
+    kick,
   }
 }

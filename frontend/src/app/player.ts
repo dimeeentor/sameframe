@@ -42,6 +42,7 @@ interface YTPlayer {
   isMuted(): boolean
   setVolume(volume: number): void
   setPlaybackRate(rate: number): void
+  destroy(): void
 }
 
 declare global {
@@ -73,6 +74,7 @@ export type PlayerStart = {
 
 export type Player = {
   attach(host: HTMLElement, start?: PlayerStart | null): void
+  destroy(): void
   load(id: VideoId, startAt: number): void
   play(): void
   pause(): void
@@ -112,6 +114,8 @@ export function createPlayer(): Player {
   let ready = false
   let host: HTMLElement | null = null
   let start: PlayerStart | null = null
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
+  const onBlur = () => setTimeout(reclaimFocus, 0)
   const pending: Array<(p: YTPlayer) => void> = []
   const subs = new Set<(e: PlayerEvent) => void>()
 
@@ -197,14 +201,14 @@ export function createPlayer(): Player {
   }
 
   function handshake() {
-    globalThis.addEventListener("blur", () => setTimeout(reclaimFocus, 0))
+    globalThis.addEventListener("blur", onBlur)
     globalThis._ytAppReady = onApiReady
     if (globalThis._ytReadySeen) {
       onApiReady()
     } else {
       globalThis.onYouTubeIframeAPIReady = onApiReady
     }
-    setTimeout(() => {
+    retryTimer = setTimeout(() => {
       if (ready) return
       if (typeof YT === "undefined") {
         console.warn("[sameframe] YT undefined after 4s — retrying iframe_api")
@@ -228,6 +232,25 @@ export function createPlayer(): Player {
       host = el
       start = startAt ?? null
       handshake()
+    },
+    destroy() {
+      if (retryTimer) clearTimeout(retryTimer)
+      retryTimer = null
+      globalThis.removeEventListener("blur", onBlur)
+      if (globalThis._ytAppReady === onApiReady) globalThis._ytAppReady = undefined
+      if (globalThis.onYouTubeIframeAPIReady === onApiReady) {
+        globalThis.onYouTubeIframeAPIReady = undefined
+      }
+      try {
+        yt?.destroy()
+      } catch {
+        frameEl()?.remove()
+      }
+      yt = null
+      ready = false
+      host = null
+      start = null
+      pending.length = 0
     },
     load(id, startAt) {
       whenReady((p) => {

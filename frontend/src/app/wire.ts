@@ -2,6 +2,7 @@
  *  so the API and the frontend cannot drift. Imported only by session.ts and
  *  transport.ts. Never re-exported to the UI. */
 export type {
+  ClientInfo,
   ClientMsg,
   RoomCode,
   RoomMetadata,
