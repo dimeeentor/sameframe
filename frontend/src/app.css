@@ -335,6 +335,12 @@ button {
   flex: 1;
 }
 
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---------- topbar ---------- */
 
 .topbar {
@@ -1702,6 +1708,11 @@ kbd {
 
 .sheet-root.open {
   pointer-events: auto;
+}
+
+.sheet-root:not(.open) {
+  visibility: hidden;
+  transition: visibility 0s 260ms;
 }
 
 .sheet-scrim {
