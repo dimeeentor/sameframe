@@ -28,19 +28,11 @@ export const settings = $state({
   theme: "light" as Theme,
 })
 
-/** Keep in sync with --bg in app.css and the pre-paint script in index.html. */
-const CHROME_COLOR: Record<Theme, string> = {
-  light: "#f4f6f9",
-  dark: "#0b0f16",
-}
-
 function applyTheme() {
   settings.theme = settings.themeMode === "system"
     ? systemTheme()
     : settings.themeMode
   document.documentElement.setAttribute("data-theme", settings.theme)
-  const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute("content", CHROME_COLOR[settings.theme])
 }
 applyTheme()
 
