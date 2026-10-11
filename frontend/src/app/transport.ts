@@ -11,6 +11,37 @@ export type Transport = {
   send(msg: ClientMsg): void
   onMessage(cb: (m: ServerMsg) => void): void
   onStatus(cb: (s: ConnectionStatus) => void): void
+  onKicked(cb: () => void): void
+}
+
+export type TransportOpts = { ownerToken?: () => string | null }
+
+const KICKED_CODE = 4003
+
+export function deviceLabel(ua = navigator.userAgent): string {
+  const os = /iPhone/.test(ua)
+    ? "iPhone"
+    : /iPad/.test(ua)
+    ? "iPad"
+    : /Android/.test(ua)
+    ? "Android"
+    : /Mac/.test(ua)
+    ? "Mac"
+    : /Windows/.test(ua)
+    ? "Windows"
+    : /Linux/.test(ua)
+    ? "Linux"
+    : "Device"
+  const browser = /Edg|EdgiOS|EdgA/.test(ua)
+    ? "Edge"
+    : /Firefox|FxiOS/.test(ua)
+    ? "Firefox"
+    : /Chrome|CriOS/.test(ua)
+    ? "Chrome"
+    : /Safari/.test(ua)
+    ? "Safari"
+    : "Browser"
+  return `${os} · ${browser}`
 }
 
 const RECONNECT_MS = 1500
@@ -21,7 +52,10 @@ const SILENCE_MS = 2 * PING_MS + 5000
 // keeps idle proxies from dropping the socket without waking the room
 const PING = JSON.stringify({ type: "ping" })
 
-export function createTransport(roomCode: RoomCode): Transport {
+export function createTransport(
+  roomCode: RoomCode,
+  opts: TransportOpts = {},
+): Transport {
   let ws: WebSocket | null = null
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let retryTimer: ReturnType<typeof setTimeout> | null = null
@@ -31,6 +65,9 @@ export function createTransport(roomCode: RoomCode): Transport {
   let status: ConnectionStatus = "connecting"
   const msgSubs = new Set<(m: ServerMsg) => void>()
   const statusSubs = new Set<(s: ConnectionStatus) => void>()
+  const kickSubs = new Set<() => void>()
+  const clientId = crypto.randomUUID()
+  const label = deviceLabel()
 
   function isOpen(): boolean {
     return ws?.readyState === WebSocket.OPEN
@@ -98,6 +135,20 @@ export function createTransport(roomCode: RoomCode): Transport {
     onDisconnect()
   }
 
+  function onClose(e: CloseEvent) {
+    if (e.code === KICKED_CODE) {
+      kicked()
+      return
+    }
+    onDisconnect()
+  }
+
+  function kicked() {
+    if (stopped) return
+    api.stop()
+    kickSubs.forEach((cb) => cb())
+  }
+
   function onDisconnect() {
     stopPing()
     // stop() closes the socket, so without this the resulting onclose
@@ -128,7 +179,10 @@ export function createTransport(roomCode: RoomCode): Transport {
     if (stopped) return
     const proto = location.protocol === "https:" ? "wss:" : "ws:"
     try {
-      ws = new WebSocket(`${proto}//${location.host}/ws/${roomCode}`)
+      const q = new URLSearchParams({ clientId, label })
+      const owner = opts.ownerToken?.()
+      if (owner) q.set("owner", owner)
+      ws = new WebSocket(`${proto}//${location.host}/ws/${roomCode}?${q}`)
     } catch {
       setStatus("offline")
       startPolling()
@@ -142,7 +196,7 @@ export function createTransport(roomCode: RoomCode): Transport {
       startPing()
       sendClient({ type: "sync_request" })
     }
-    ws.onclose = onDisconnect
+    ws.onclose = onClose
     ws.onmessage = (e) => {
       lastHeard = Date.now()
       try {
@@ -153,7 +207,7 @@ export function createTransport(roomCode: RoomCode): Transport {
     }
   }
 
-  return {
+  const api: Transport = {
     start() {
       stopped = false
       addEventListener("pagehide", onPageHide)
@@ -175,5 +229,9 @@ export function createTransport(roomCode: RoomCode): Transport {
     onStatus(cb) {
       statusSubs.add(cb)
     },
+    onKicked(cb) {
+      kickSubs.add(cb)
+    },
   }
+  return api
 }

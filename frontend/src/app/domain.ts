@@ -1,6 +1,7 @@
 /** Domain types. No transport, no YT, no JSON. Validation enters here. */
 
 import {
+  type ClientInfo,
   ROOM_CODE_RE,
   type RoomCode,
   VIDEO_ID_RE,
@@ -8,6 +9,8 @@ import {
 } from "../../../shared/messages.ts"
 
 export type { RoomCode, VideoId }
+
+export type Viewer = Readonly<ClientInfo>
 
 /** Pure parser: raw 11-char id, youtu.be, ?v=, /embed|shorts|v/ paths, fallback regex. */
 export function parseVideoId(input: string): VideoId | null {
@@ -48,6 +51,9 @@ export type SyncSnapshot = {
   readonly connection: ConnectionStatus
   readonly roomCode: RoomCode | null
   readonly joined: boolean
+  readonly viewers: readonly Viewer[]
+  readonly isOwner: boolean
+  readonly kicked: boolean
 }
 
 /** Share-link policy: room code is the only URL param, since the video lives in room state. */

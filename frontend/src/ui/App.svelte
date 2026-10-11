@@ -61,13 +61,43 @@ function onKeydown(e: KeyboardEvent) {
     <UrlBar bind:this={urlBar} />
   </Header>
   <main class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
-    <Player bind:stageHeight />
-    {#if layout.compact}
-      <UrlBar bind:this={urlBar} />
+    {#if view.kicked}
+      <div class="kicked">
+        <h2 class="kicked-title">You left the room</h2>
+        <p class="kicked-note">The video stopped so this device can sleep.</p>
+        <button class="btn primary large" type="button" onclick={() => session.rejoin()}>Rejoin</button>
+      </div>
+    {:else}
+      <Player bind:stageHeight />
+      {#if layout.compact}
+        <UrlBar bind:this={urlBar} />
+      {/if}
+      <QueueList />
     {/if}
-    <QueueList />
   </main>
   {#if !layout.compact}
     <Footer />
   {/if}
 </div>
+
+<style>
+.kicked {
+  grid-column: 1 / -1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  min-height: 50dvh;
+  text-align: center;
+}
+.kicked-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+}
+.kicked-note {
+  margin: 0;
+  color: var(--muted);
+}
+</style>
