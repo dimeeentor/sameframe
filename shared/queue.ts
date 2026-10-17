@@ -34,9 +34,10 @@ export function removeAt<S extends QueueState>(s: S, index: number): S {
   return {
     ...s,
     queue,
-    queueIndex: index < s.queueIndex
-      ? s.queueIndex - 1
-      : Math.min(s.queueIndex, queue.length - 1),
+    queueIndex:
+      index < s.queueIndex
+        ? s.queueIndex - 1
+        : Math.min(s.queueIndex, queue.length - 1),
   }
 }
 
@@ -47,9 +48,13 @@ export function moveTo<S extends QueueState>(
   to: number,
 ): S {
   if (
-    from === to || from < 0 || from >= s.queue.length || to < 0 ||
+    from === to ||
+    from < 0 ||
+    from >= s.queue.length ||
+    to < 0 ||
     to >= s.queue.length
-  ) return s
+  )
+    return s
   const queue = [...s.queue]
   const [id] = queue.splice(from, 1)
   if (!id) return s

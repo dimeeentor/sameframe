@@ -61,7 +61,10 @@ export function getSyncPayload(s: RoomState): ServerMsg {
 }
 
 /** Everything a client can command that mutates room state. */
-export type ClientCommand = Exclude<ClientMsg, { type: "sync_request" | "kick" }>
+export type ClientCommand = Exclude<
+  ClientMsg,
+  { type: "sync_request" | "kick" }
+>
 
 /** Outgoing message from a transition: broadcast to the room (optionally not
  *  to the acting client, which already applied it locally), or reply to the
@@ -182,9 +185,8 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       const removed = removeAt(s, msg.index)
       // empty queue keeps the current video playing (same as queue_clear),
       // so a reload still restores it instead of showing the splash screen
-      const next = removed.queue.length === 0
-        ? { ...removed, queueIndex: -1 }
-        : removed
+      const next =
+        removed.queue.length === 0 ? { ...removed, queueIndex: -1 } : removed
       return { next, effects: [{ kind: "broadcast", msg: queueMsg(next) }] }
     }
     case "queue_reorder": {
@@ -196,10 +198,12 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       const next = { ...s, queue: [], queueIndex: -1 }
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: { type: "queue", queue: [], queueIndex: -1 },
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: { type: "queue", queue: [], queueIndex: -1 },
+          },
+        ],
       }
     }
     case "play": {
@@ -235,7 +239,11 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         effects: [
           {
             kind: "broadcast",
-            msg: { type: "pause", currentTime: next.currentTime, rev: next.rev },
+            msg: {
+              type: "pause",
+              currentTime: next.currentTime,
+              rev: next.rev,
+            },
             excludeSelf: true,
           },
           { kind: "reply", msg: { type: "ack", rev: next.rev } },
@@ -275,7 +283,11 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
         effects: [
           {
             kind: "broadcast",
-            msg: { type: "rate", playbackRate: next.playbackRate, rev: next.rev },
+            msg: {
+              type: "rate",
+              playbackRate: next.playbackRate,
+              rev: next.rev,
+            },
             excludeSelf: true,
           },
           { kind: "reply", msg: { type: "ack", rev: next.rev } },
@@ -292,10 +304,12 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       if (!next || next === s) return NOOP
       return {
         next,
-        effects: [{
-          kind: "broadcast",
-          msg: loadMsg(next, next.videoId as VideoId),
-        }],
+        effects: [
+          {
+            kind: "broadcast",
+            msg: loadMsg(next, next.videoId as VideoId),
+          },
+        ],
       }
     }
     default: {

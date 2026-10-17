@@ -4,7 +4,7 @@ import type { Env } from "./env.ts"
 
 export const ws = new Hono<{ Bindings: Env }>()
 
-ws.get("/ws/:code", (c) => {
+ws.get("/ws/:code", async (c) => {
   const code = c.req.param("code").toUpperCase()
   if (!isRoomCode(code)) return c.text("invalid room code", 400)
   if (c.req.header("upgrade") !== "websocket") {

@@ -35,25 +35,25 @@ export type ServerMsg =
   | { type: "clients"; count: number; clients: ClientInfo[] }
   | { type: "kicked" }
   | {
-    type: "load"
-    videoId: VideoId
-    currentTime: number
-    isPlaying: boolean
-    rev: number
-    queue: VideoId[]
-    queueIndex: number
-  }
+      type: "load"
+      videoId: VideoId
+      currentTime: number
+      isPlaying: boolean
+      rev: number
+      queue: VideoId[]
+      queueIndex: number
+    }
   | { type: "queue"; queue: VideoId[]; queueIndex: number }
   | {
-    type: "sync"
-    videoId: VideoId | null
-    currentTime: number
-    isPlaying: boolean
-    playbackRate: number
-    rev: number
-    queue: VideoId[]
-    queueIndex: number
-  }
+      type: "sync"
+      videoId: VideoId | null
+      currentTime: number
+      isPlaying: boolean
+      playbackRate: number
+      rev: number
+      queue: VideoId[]
+      queueIndex: number
+    }
   | { type: "play"; currentTime: number; rev: number }
   | { type: "pause"; currentTime: number; rev: number }
   | { type: "seek"; currentTime: number; rev: number }
@@ -80,8 +80,8 @@ function asId(v: unknown): VideoId | null {
 
 function asQueue(v: unknown): VideoId[] {
   if (!Array.isArray(v)) return []
-  return v.filter((x): x is VideoId =>
-    typeof x === "string" && VIDEO_ID_RE.test(x)
+  return v.filter(
+    (x): x is VideoId => typeof x === "string" && VIDEO_ID_RE.test(x),
   )
 }
 
@@ -221,8 +221,8 @@ export function parseClientMsg(raw: unknown): ClientMsg | null {
       }
     case "rate":
       return typeof m.playbackRate === "number" &&
-          Number.isFinite(m.playbackRate) &&
-          m.playbackRate > 0
+        Number.isFinite(m.playbackRate) &&
+        m.playbackRate > 0
         ? { type: "rate", playbackRate: m.playbackRate, ...optRev(m.rev) }
         : null
     case "ended": {

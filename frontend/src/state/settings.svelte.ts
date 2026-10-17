@@ -29,9 +29,8 @@ export const settings = $state({
 })
 
 function applyTheme() {
-  settings.theme = settings.themeMode === "system"
-    ? systemTheme()
-    : settings.themeMode
+  settings.theme =
+    settings.themeMode === "system" ? systemTheme() : settings.themeMode
   document.documentElement.setAttribute("data-theme", settings.theme)
 }
 applyTheme()
