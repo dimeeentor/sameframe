@@ -1,7 +1,12 @@
 import { DurableObject } from "cloudflare:workers"
 import { CLIENT_ID_RE, isRoomCode, parseClientMsg } from "../shared/messages.ts"
 import type { ClientInfo, RoomCode } from "../shared/messages.ts"
-import { applyClientMsg, emptyRoomState, getSyncPayload, type RoomState } from "./room-state.ts"
+import {
+  applyClientMsg,
+  emptyRoomState,
+  getSyncPayload,
+  type RoomState,
+} from "./room-state.ts"
 import type { Env } from "./env.ts"
 
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000 // 24h
@@ -17,13 +22,21 @@ const PING = JSON.stringify({ type: "ping" })
 const PONG = JSON.stringify({ type: "pong" })
 const STALE_MS = 40 * 1000
 
-type SocketMeta = { connectedAt: number; clientId: string; label: string; isOwner: boolean }
+type SocketMeta = {
+  connectedAt: number
+  clientId: string
+  label: string
+  isOwner: boolean
+}
 
 function isRoomState(v: unknown): v is RoomState {
   if (typeof v !== "object" || v === null) return false
   const o = v as Record<string, unknown>
-  return typeof o.code === "string" && typeof o.createdAt === "number" &&
+  return (
+    typeof o.code === "string" &&
+    typeof o.createdAt === "number" &&
     Array.isArray(o.queue)
+  )
 }
 
 export class RoomDurableObject extends DurableObject<Env> {
@@ -42,7 +55,8 @@ export class RoomDurableObject extends DurableObject<Env> {
   fetch(request: Request): Response {
     const url = new URL(request.url)
     const headerCode = request.headers.get("X-Room-Code")
-    const code = headerCode && isRoomCode(headerCode) ? headerCode as RoomCode : null
+    const code =
+      headerCode && isRoomCode(headerCode) ? (headerCode as RoomCode) : null
 
     if (request.headers.get("Upgrade") === "websocket") {
       if (!code) return new Response("missing room code", { status: 400 })
@@ -103,17 +117,23 @@ export class RoomDurableObject extends DurableObject<Env> {
 
   private handleWebSocketUpgrade(code: RoomCode, url: URL): Response {
     const idParam = url.searchParams.get("clientId")
-    const clientId = idParam && CLIENT_ID_RE.test(idParam) ? idParam : crypto.randomUUID()
-    const label = (url.searchParams.get("label") ?? "").trim().slice(0, 40) || "Viewer"
+    const clientId =
+      idParam && CLIENT_ID_RE.test(idParam) ? idParam : crypto.randomUUID()
+    const label =
+      (url.searchParams.get("label") ?? "").trim().slice(0, 40) || "Viewer"
     const token = url.searchParams.get("owner")
-    const isOwner = !!token && token === this.ctx.storage.kv.get<string>(OWNER_KEY)
+    const isOwner =
+      !!token && token === this.ctx.storage.kv.get<string>(OWNER_KEY)
 
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     this.ctx.acceptWebSocket(server)
-    server.serializeAttachment(
-      { connectedAt: Date.now(), clientId, label, isOwner } satisfies SocketMeta,
-    )
+    server.serializeAttachment({
+      connectedAt: Date.now(),
+      clientId,
+      label,
+      isOwner,
+    } satisfies SocketMeta)
 
     server.send(JSON.stringify(getSyncPayload(this.ensureRoom(code))))
     this.broadcastClientCount()
@@ -124,7 +144,8 @@ export class RoomDurableObject extends DurableObject<Env> {
 
   private isStale(ws: WebSocket, now: number): boolean {
     const meta = ws.deserializeAttachment() as SocketMeta | null
-    const lastPing = this.ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() ?? 0
+    const lastPing =
+      this.ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() ?? 0
     return now - Math.max(meta?.connectedAt ?? 0, lastPing) > STALE_MS
   }
 
@@ -154,9 +175,14 @@ export class RoomDurableObject extends DurableObject<Env> {
       }
     })
     for (const [i, socket] of live.entries()) {
-      const clients: ClientInfo[] = infos.map((c, j) => ({ ...c, isYou: i === j }))
+      const clients: ClientInfo[] = infos.map((c, j) => ({
+        ...c,
+        isYou: i === j,
+      }))
       try {
-        socket.send(JSON.stringify({ type: "clients", count: live.length, clients }))
+        socket.send(
+          JSON.stringify({ type: "clients", count: live.length, clients }),
+        )
       } catch {
         // dead socket; webSocketClose/webSocketError will prune it
       }
@@ -197,9 +223,13 @@ export class RoomDurableObject extends DurableObject<Env> {
     if (msg.type === "kick") {
       const me = ws.deserializeAttachment() as SocketMeta | null
       if (!me?.isOwner || msg.clientId === me.clientId) return
-      const kicked = this.ctx.getWebSockets().filter((s) =>
-        (s.deserializeAttachment() as SocketMeta | null)?.clientId === msg.clientId
-      )
+      const kicked = this.ctx
+        .getWebSockets()
+        .filter(
+          (s) =>
+            (s.deserializeAttachment() as SocketMeta | null)?.clientId ===
+            msg.clientId,
+        )
       for (const s of kicked) {
         try {
           s.send(JSON.stringify({ type: "kicked" }))
@@ -224,9 +254,13 @@ export class RoomDurableObject extends DurableObject<Env> {
     // writer may override itself, since a play then pause faster than one RTT
     // both carry the same base rev.
     if (
-      (msg.type === "play" || msg.type === "pause" || msg.type === "seek" ||
+      (msg.type === "play" ||
+        msg.type === "pause" ||
+        msg.type === "seek" ||
         msg.type === "rate") &&
-      msg.rev !== undefined && msg.rev !== state.rev && ws !== this.lastWriter
+      msg.rev !== undefined &&
+      msg.rev !== state.rev &&
+      ws !== this.lastWriter
     ) {
       reply(getSyncPayload(state))
       return

@@ -61,9 +61,11 @@ type Session = ReturnType<typeof createSession>
  *  on `ready` instead of throwing. */
 function whenReady(fn: (s: Session) => void) {
   if (_session) fn(_session)
-  else {void ready.then(() => {
+  else {
+    void ready.then(() => {
       if (_session) fn(_session)
-    })}
+    })
+  }
 }
 
 export const view = $state<SyncSnapshot>({
@@ -150,7 +152,7 @@ export const session = {
     if (!_code || !view.kicked) return
     _session?.stop()
     startSession(_code)
-    view.kicked = false
+    Object.assign(view, { kicked: false })
     await tick()
     _session?.join()
   },

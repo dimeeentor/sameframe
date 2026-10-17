@@ -22,25 +22,25 @@ export function deviceLabel(ua = navigator.userAgent): string {
   const os = /iPhone/.test(ua)
     ? "iPhone"
     : /iPad/.test(ua)
-    ? "iPad"
-    : /Android/.test(ua)
-    ? "Android"
-    : /Mac/.test(ua)
-    ? "Mac"
-    : /Windows/.test(ua)
-    ? "Windows"
-    : /Linux/.test(ua)
-    ? "Linux"
-    : "Device"
+      ? "iPad"
+      : /Android/.test(ua)
+        ? "Android"
+        : /Mac/.test(ua)
+          ? "Mac"
+          : /Windows/.test(ua)
+            ? "Windows"
+            : /Linux/.test(ua)
+              ? "Linux"
+              : "Device"
   const browser = /Edg|EdgiOS|EdgA/.test(ua)
     ? "Edge"
     : /Firefox|FxiOS/.test(ua)
-    ? "Firefox"
-    : /Chrome|CriOS/.test(ua)
-    ? "Chrome"
-    : /Safari/.test(ua)
-    ? "Safari"
-    : "Browser"
+      ? "Firefox"
+      : /Chrome|CriOS/.test(ua)
+        ? "Chrome"
+        : /Safari/.test(ua)
+          ? "Safari"
+          : "Browser"
   return `${os} · ${browser}`
 }
 
@@ -97,9 +97,9 @@ export function createTransport(
   function startPolling() {
     if (pollTimer !== null) return
     setStatus("polling")
-    pollOnce()
+    void pollOnce()
     pollTimer = setInterval(() => {
-      if (!isOpen()) pollOnce()
+      if (!isOpen()) void pollOnce()
     }, POLL_MS)
   }
 

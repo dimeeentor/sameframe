@@ -1,8 +1,8 @@
-import { defineConfig } from "vite"
+import { defineConfig, lazyPlugins } from "vite-plus"
 import { svelte } from "@sveltejs/vite-plugin-svelte"
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: lazyPlugins(() => [svelte()]),
   server: {
     // allow serving the shared protocol module that lives above frontend/
     fs: { allow: [".."] },

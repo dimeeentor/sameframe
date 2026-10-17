@@ -7,7 +7,10 @@ import type { Env } from "./env.ts"
 
 const api = new Hono<{ Bindings: Env }>()
 
-async function fetchRoomState(env: Env, code: RoomCode): Promise<RoomState | null> {
+async function fetchRoomState(
+  env: Env,
+  code: RoomCode,
+): Promise<RoomState | null> {
   const stub = env.ROOMS.get(env.ROOMS.idFromName(code))
   const res = await stub.fetch("https://room/state", {
     headers: { "X-Room-Code": code },
@@ -70,7 +73,9 @@ async function getTitle(c: Context) {
     return c.json(
       { id, title: j.title ?? id, author: j.author_name ?? "" },
       200,
-      { "Cache-Control": "public, max-age=86400" },
+      {
+        "Cache-Control": "public, max-age=86400",
+      },
     )
   } catch {
     return c.json({ id, title: id })

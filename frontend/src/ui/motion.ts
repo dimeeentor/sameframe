@@ -24,7 +24,10 @@ export function rise(
   }
 }
 
-export function swap(_node: Element, { duration = 200 } = {}): TransitionConfig {
+export function swap(
+  _node: Element,
+  { duration = 200 } = {},
+): TransitionConfig {
   if (reducedMotion()) return fadeOnly(120)
   return {
     duration,
@@ -33,7 +36,10 @@ export function swap(_node: Element, { duration = 200 } = {}): TransitionConfig 
   }
 }
 
-export function collapse(node: HTMLElement, { duration = 240 } = {}): TransitionConfig {
+export function collapse(
+  node: HTMLElement,
+  { duration = 240 } = {},
+): TransitionConfig {
   if (reducedMotion()) return fadeOnly(120)
   const style = getComputedStyle(node)
   const h = node.offsetHeight
@@ -44,9 +50,11 @@ export function collapse(node: HTMLElement, { duration = 240 } = {}): Transition
     easing: cubicInOut,
     css: (t) => {
       const o = Math.max(0, (t - 0.4) / 0.6)
-      return `overflow: hidden; opacity: ${o}; height: ${t * h}px;` +
+      return (
+        `overflow: hidden; opacity: ${o}; height: ${t * h}px;` +
         `padding-top: ${t * pt}px; padding-bottom: ${t * pb}px;` +
         `transform: scale(${0.97 + 0.03 * t})`
+      )
     },
   }
 }

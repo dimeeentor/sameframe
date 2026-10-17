@@ -237,7 +237,8 @@ export function createPlayer(): Player {
       if (retryTimer) clearTimeout(retryTimer)
       retryTimer = null
       globalThis.removeEventListener("blur", onBlur)
-      if (globalThis._ytAppReady === onApiReady) globalThis._ytAppReady = undefined
+      if (globalThis._ytAppReady === onApiReady)
+        globalThis._ytAppReady = undefined
       if (globalThis.onYouTubeIframeAPIReady === onApiReady) {
         globalThis.onYouTubeIframeAPIReady = undefined
       }

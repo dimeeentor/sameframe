@@ -136,7 +136,10 @@ export function createSession(
   function send(msg: ClientMsg) {
     // playback commands carry the last rev seen so the server can reject stale ones
     const playback =
-      msg.type === "play" || msg.type === "pause" || msg.type === "seek" || msg.type === "rate"
+      msg.type === "play" ||
+      msg.type === "pause" ||
+      msg.type === "seek" ||
+      msg.type === "rate"
     if (playback || msg.type === "load") lastCommandAt = Date.now()
     transport.send(playback ? { ...msg, rev: s.rev } : msg)
   }
@@ -327,11 +330,11 @@ export function createSession(
     const t = player.currentTime()
     const st = player.state()
     if (s.videoId && s.joined && !isSuppressed()) {
-      const expected = st === "playing" && s.lastTickAt
-        ? s.lastTickTime + ((now - s.lastTickAt) / 1000) * s.playbackRate
-        : s.lastTickTime
-      const settled = st === "playing" || st === "paused" ||
-        st === "buffering"
+      const expected =
+        st === "playing" && s.lastTickAt
+          ? s.lastTickTime + ((now - s.lastTickAt) / 1000) * s.playbackRate
+          : s.lastTickTime
+      const settled = st === "playing" || st === "paused" || st === "buffering"
       if (settled && Math.abs(t - expected) > USER_SEEK_JUMP) {
         send({ type: "seek", currentTime: t })
         noteRemote(t, s.isPlaying)
@@ -354,8 +357,12 @@ export function createSession(
     s.lastTickTime = t
     s.lastTickAt = now
     if (
-      s.joined && s.videoId && s.connection === "open" && !isSuppressed() &&
-      now - lastSyncAt >= SYNC_EVERY_MS && now - lastCommandAt >= SYNC_QUIET_MS
+      s.joined &&
+      s.videoId &&
+      s.connection === "open" &&
+      !isSuppressed() &&
+      now - lastSyncAt >= SYNC_EVERY_MS &&
+      now - lastCommandAt >= SYNC_QUIET_MS
     ) {
       send({ type: "sync_request" })
       lastSyncAt = now
