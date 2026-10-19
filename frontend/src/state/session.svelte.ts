@@ -84,10 +84,47 @@ export const view = $state<SyncSnapshot>({
   kicked: false,
 })
 
+// The iframe alone doesn't reliably keep the screen awake, so hold a wake lock
+// while a joined, non-kicked viewer is playing.
+// Holds the pending request so a release issued mid-request still reaches the lock.
+let wakeLock: Promise<WakeLockSentinel | void> | null = null
+
+function syncWakeLock() {
+  if (!navigator.wakeLock) return
+  const want =
+    view.isPlaying &&
+    view.joined &&
+    !view.kicked &&
+    document.visibilityState === "visible"
+  if (want && !wakeLock) {
+    const p: Promise<WakeLockSentinel | void> = navigator.wakeLock
+      .request("screen")
+      .then((l) => {
+        // The browser drops the lock when the tab hides; clear it so we re-request.
+        l.addEventListener("release", () => {
+          if (wakeLock === p) wakeLock = null
+        })
+        return l
+      })
+      .catch(() => {
+        if (wakeLock === p) wakeLock = null
+      })
+    wakeLock = p
+  } else if (!want && wakeLock) {
+    const p = wakeLock
+    wakeLock = null
+    void p.then((l) => l?.release()).catch(() => {})
+  }
+}
+document.addEventListener("visibilitychange", syncWakeLock)
+
 function startSession(code: RoomCode) {
   const transport = createTransport(code, { ownerToken: () => getToken(code) })
   _session = createSession(transport, createPlayer(), code)
-  _session.subscribe((snap) => Object.assign(view, snap))
+  _session.subscribe((snap) => {
+    Object.assign(view, snap)
+    syncWakeLock()
+  })
   _session.start()
 }
 
