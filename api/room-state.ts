@@ -41,7 +41,7 @@ export function emptyRoomState(code: RoomCode): RoomState {
 }
 
 /** Wall-clock position a joining client should start at. */
-function estimatedTime(s: RoomState): number {
+export function estimatedTime(s: RoomState): number {
   if (!s.isPlaying || s.videoId === null) return s.currentTime
   const elapsed = ((Date.now() - s.updatedAt) / 1000) * s.playbackRate
   return s.currentTime + elapsed

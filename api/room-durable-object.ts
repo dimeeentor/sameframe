@@ -4,6 +4,7 @@ import type { ClientInfo, RoomCode } from "../shared/messages.ts"
 import {
   applyClientMsg,
   emptyRoomState,
+  estimatedTime,
   getSyncPayload,
   type RoomState,
 } from "./room-state.ts"
@@ -289,6 +290,7 @@ export class RoomDurableObject extends DurableObject<Env> {
       // already closed
     }
     this.broadcastClientCount(ws)
+    this.pauseIfEmpty(ws)
   }
 
   webSocketError(ws: WebSocket, error: unknown) {
@@ -297,6 +299,20 @@ export class RoomDurableObject extends DurableObject<Env> {
       ws.close(4001, "error")
     } catch {}
     this.broadcastClientCount(ws)
+    this.pauseIfEmpty(ws)
+  }
+
+  /** Nobody is watching, so stop the clock: otherwise estimatedTime keeps
+   *  running and a resumed room starts far past where everyone left. */
+  private pauseIfEmpty(closing: WebSocket) {
+    if (this.liveSockets(closing).length) return
+    const state = this.getState()
+    if (!state?.isPlaying) return
+    const { next } = applyClientMsg(state, {
+      type: "pause",
+      currentTime: estimatedTime(state),
+    })
+    if (next) this.putState(next)
   }
 
   async alarm() {
