@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from "svelte"
-import { session, view } from "../state/session.svelte"
+import { chooseResume, resume, session, view } from "../state/session.svelte"
 import { ensureTitle, titleOf } from "../state/titles.svelte"
 import { isTypingTarget } from "../app/domain"
 import Header from "./Header.svelte"
@@ -61,6 +61,13 @@ function onKeydown(e: KeyboardEvent) {
     <UrlBar bind:this={urlBar} />
   </Header>
   <main class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
+    {#if resume.code}
+      <div class="resume" role="status">
+        <p class="resume-note">Continue your last room <strong>{resume.code}</strong>?</p>
+        <button class="btn primary" type="button" onclick={() => chooseResume(true)}>Continue</button>
+        <button class="btn subtle" type="button" onclick={() => chooseResume(false)}>Start fresh</button>
+      </div>
+    {/if}
     {#if view.kicked}
       <div class="kicked">
         <h2 class="kicked-title">You left the room</h2>
@@ -81,6 +88,20 @@ function onKeydown(e: KeyboardEvent) {
 </div>
 
 <style>
+.resume {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--accent-tint);
+}
+.resume-note {
+  margin: 0 auto 0 0;
+}
 .kicked {
   grid-column: 1 / -1;
   display: grid;

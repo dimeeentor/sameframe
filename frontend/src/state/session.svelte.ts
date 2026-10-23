@@ -35,17 +35,49 @@ function claimFromHash() {
 }
 claimFromHash()
 
+// The room itself (queue, video, position) lives server-side for 24h, so the
+// only thing worth remembering locally is which room we were in.
+const LAST_ROOM_KEY = "sameframe:lastRoom"
+
+/** The saved room, if the server still has it. */
+async function findResumable(): Promise<RoomCode | null> {
+  try {
+    const code = parseRoomCode(localStorage.getItem(LAST_ROOM_KEY) ?? "")
+    if (!code) return null
+    const res = await fetch(`/api/rooms/${code}`)
+    if (res.ok) return code
+    if (res.status === 404) localStorage.removeItem(LAST_ROOM_KEY)
+  } catch {}
+  return null
+}
+
+/** Set while a bare-URL visit waits on the user's continue/start-fresh choice. */
+export const resume = $state<{ code: RoomCode | null }>({ code: null })
+let answerResume: (cont: boolean) => void = () => {}
+
+export function chooseResume(cont: boolean) {
+  resume.code = null
+  answerResume(cont)
+}
+
 async function ensureRoomCode(): Promise<RoomCode> {
   const existing = getRoomFromUrl()
   if (existing) return existing
 
-  // no ?room=, so create one and rewrite the URL
-  const res = await fetch("/api/rooms", { method: "POST" })
-  if (!res.ok) throw new Error("failed to create room")
-  const data = (await res.json()) as { code: string; ownerToken?: string }
-  const code = parseRoomCode(data.code)
-  if (!code) throw new Error("invalid room code from server")
-  if (data.ownerToken) saveToken(code, data.ownerToken)
+  // no ?room=: offer the previous room, else create one. Either way rewrite the URL
+  let code = await findResumable()
+  if (code) {
+    resume.code = code
+    if (!(await new Promise<boolean>((r) => (answerResume = r)))) code = null
+  }
+  if (!code) {
+    const res = await fetch("/api/rooms", { method: "POST" })
+    if (!res.ok) throw new Error("failed to create room")
+    const data = (await res.json()) as { code: string; ownerToken?: string }
+    code = parseRoomCode(data.code)
+    if (!code) throw new Error("invalid room code from server")
+    if (data.ownerToken) saveToken(code, data.ownerToken)
+  }
   const url = new URL(location.href)
   url.searchParams.set("room", code)
   history.replaceState(null, "", url.toString())
@@ -124,6 +156,12 @@ function startSession(code: RoomCode) {
   _session.subscribe((snap) => {
     Object.assign(view, snap)
     syncWakeLock()
+    // an empty room isn't worth resuming, and must not displace one that is
+    if (snap.videoId || snap.queue.length) {
+      try {
+        localStorage.setItem(LAST_ROOM_KEY, code)
+      } catch {}
+    }
   })
   _session.start()
 }
