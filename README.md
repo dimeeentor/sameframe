@@ -8,7 +8,7 @@ and i wanted to make our own version instead.
 
 - **runs on cloudflare workers.** each room's video state (what's playing,
   current time, paused or not, the queue) lives in a Durable Object scoped to
-  that room's code, with a 24h expiry. no accounts, no cross-room data.
+  that room's code, with a 3 day expiry. no accounts, no cross-room data.
 - **no telemetry beyond youtube.** the only outside request is to youtube's
   nocookie player, plus an optional title lookup that proxies youtube's oembed
   endpoint. no analytics, no cookies of ours, nothing pinged back to me.
@@ -44,7 +44,7 @@ auto-advances when a video ends, looping back around when it runs out.
 ## limitations
 
 - tested on macos and ios so far.
-- a room's state (and its websocket connections) is torn down 24h after last
+- a room's state (and its websocket connections) is torn down 3 days after last
   activity.
 
 ## license
