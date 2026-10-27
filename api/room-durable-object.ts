@@ -10,9 +10,9 @@ import {
 } from "./room-state.ts"
 import type { Env } from "./env.ts"
 
-const ROOM_TTL_MS = 24 * 60 * 60 * 1000 // 24h
+const ROOM_TTL_MS = 3 * 24 * 60 * 60 * 1000 // 3 days
 // the TTL slides on activity, but rewriting the alarm on every play/pause is a
-// second storage write per message. Hourly is close enough for a 24h expiry.
+// second storage write per message. Hourly is close enough for a 3 day expiry.
 const ALARM_REFRESH_MS = 60 * 60 * 1000
 const STATE_KEY = "state"
 const OWNER_KEY = "ownerToken"

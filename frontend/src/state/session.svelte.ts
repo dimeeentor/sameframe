@@ -35,7 +35,7 @@ function claimFromHash() {
 }
 claimFromHash()
 
-// The room itself (queue, video, position) lives server-side for 24h, so the
+// The room itself (queue, video, position) lives server-side for 3 days, so the
 // only thing worth remembering locally is which room we were in.
 const LAST_ROOM_KEY = "sameframe:lastRoom"
 
