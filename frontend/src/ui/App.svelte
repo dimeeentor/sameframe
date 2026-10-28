@@ -1,5 +1,4 @@
 <script lang="ts">
-import { onMount } from "svelte"
 import { session, view } from "../state/session.svelte"
 import { ensureTitle, titleOf } from "../state/titles.svelte"
 import { isTypingTarget } from "../app/domain"
@@ -11,11 +10,6 @@ import JoinGate from "./JoinGate.svelte"
 let panel: Panel | undefined = $state()
 let stageHeight = $state(0)
 
-onMount(() => {
-  session.start()
-  return () => session.stop()
-})
-
 // fetch titles for the current and every queued video
 $effect(() => {
   if (view.videoId) ensureTitle(view.videoId)
@@ -25,6 +19,9 @@ $effect(() => {
 function onKeydown(e: KeyboardEvent) {
   if (isTypingTarget(e.target)) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
+  const el = e.target instanceof Element ? e.target : null
+  if (el?.closest("dialog, [role=dialog]")) return
+  if (e.key === " " && el?.closest("button, a")) return
   if (e.key === "/") {
     e.preventDefault()
     panel?.focusLink()
@@ -55,7 +52,7 @@ function onKeydown(e: KeyboardEvent) {
 
 <div class="app">
   <Header />
-  <main class="main" style={stageHeight ? `--stage-h: ${stageHeight}px` : ""}>
+  <main class="main" style:--stage-h={stageHeight ? `${stageHeight}px` : undefined}>
     {#if view.kicked}
       <div class="kicked">
         <h2 class="kicked-title">You left the room</h2>

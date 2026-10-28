@@ -34,7 +34,7 @@ async function copy() {
 }
 </script>
 
-<button class="btn {variant}" class:block class:copied type="button" {title} onclick={copy}>
+<button class={["btn", variant, { block, copied }]} type="button" {title} onclick={copy}>
   <span class="swap-cell">
     <span class="swap-label" aria-hidden={copied}>
       <Icon name="link" />

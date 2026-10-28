@@ -22,7 +22,7 @@ type Props = {
 let { id, index, active, playing, onplay, onremove, onreorder }: Props = $props()
 
 let dragging = $state(false)
-let row: HTMLLIElement | undefined = $state()
+let row: HTMLLIElement | undefined
 
 const SETTLE_MS = 200
 
@@ -115,9 +115,7 @@ function startDrag(e: PointerEvent) {
 <!-- click-to-play on the row is mouse convenience; the thumb button is the keyboard path -->
 <li
   bind:this={row}
-  class="qrow"
-  class:active
-  class:dragging
+  class={["qrow", { active, dragging }]}
   in:rise={{ y: 10 }}
   out:collapse
   onclick={(e) => {

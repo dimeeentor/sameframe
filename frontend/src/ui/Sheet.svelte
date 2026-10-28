@@ -5,7 +5,7 @@ type Props = { open: boolean; onclose: () => void; label: string; children: Snip
 let { open, onclose, label, children }: Props = $props()
 
 let panel: HTMLDivElement | undefined = $state()
-let scrim: HTMLDivElement | undefined = $state()
+let scrim: HTMLDivElement | undefined
 
 let dragging = false
 let startY = 0
@@ -55,7 +55,7 @@ $effect(() => {
 
 <svelte:window onkeydown={(e) => open && e.key === "Escape" && onclose()} />
 
-<div class="sheet-root" class:open inert={!open}>
+<div class={["sheet-root", { open }]} inert={!open}>
   <div class="sheet-scrim" bind:this={scrim} onclick={onclose} aria-hidden="true"></div>
   <div
     class="sheet"

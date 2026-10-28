@@ -4,12 +4,14 @@ import { parseVideoId, thumb } from "../app/domain"
 import Icon from "./Icon.svelte"
 import { shake } from "./motion"
 
+let { ondone }: { ondone?: () => void } = $props()
+
 let value = $state("")
 let invalid = $state(false)
 let focused = $state(false)
 let flashTimer: ReturnType<typeof setTimeout> | undefined
-let input: HTMLInputElement | undefined = $state()
-let root: HTMLDivElement | undefined = $state()
+let input: HTMLInputElement | undefined
+let root: HTMLDivElement | undefined
 
 const candidate = $derived(parseVideoId(value))
 let loadedThumb = $state<string | null>(null)
@@ -31,6 +33,7 @@ function playNow() {
   if (!id) return reject()
   session.loadVideo(id)
   value = ""
+  ondone?.()
 }
 
 function addToQueue() {
@@ -38,10 +41,11 @@ function addToQueue() {
   if (!id) return reject()
   session.addToQueue(id)
   value = ""
+  ondone?.()
 }
 </script>
 
-<div class="composer" class:invalid class:has-preview={preview} bind:this={root}>
+<div class={["composer", { invalid, "has-preview": preview }]} bind:this={root}>
   <div class="composer-field">
     <span class="composer-lead" aria-hidden="true">
       <span class="composer-glyph"><Icon name="link" /></span>

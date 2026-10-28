@@ -1,7 +1,7 @@
 <script lang="ts">
 import { tick } from "svelte"
 import { layout } from "../state/media.svelte"
-import { resume, view } from "../state/session.svelte"
+import { resume } from "../state/session.svelte"
 import Icon from "./Icon.svelte"
 import QueueList from "./QueueList.svelte"
 import Sheet from "./Sheet.svelte"
@@ -15,15 +15,6 @@ export async function focusLink() {
   await tick()
   urlBar?.focus()
 }
-
-// Queueing or playing a link ends the "add" task on mobile.
-let last = `${view.queue.length}|${view.videoId}`
-$effect(() => {
-  const key = `${view.queue.length}|${view.videoId}`
-  if (key === last) return
-  last = key
-  addOpen = false
-})
 </script>
 
 <section class="panel" aria-label="Queue">
@@ -50,6 +41,6 @@ $effect(() => {
     <Icon name="plus" stroke={2.2} />
   </button>
   <Sheet open={addOpen} onclose={() => (addOpen = false)} label="Add a video">
-    <UrlBar bind:this={urlBar} />
+    <UrlBar bind:this={urlBar} ondone={() => (addOpen = false)} />
   </Sheet>
 {/if}
