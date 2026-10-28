@@ -4,9 +4,6 @@ import { parseRoomCode } from "../app/domain"
 import Icon from "./Icon.svelte"
 import { shake } from "./motion"
 
-type Props = { stacked?: boolean }
-let { stacked = false }: Props = $props()
-
 let joinCode = $state("")
 let joinError = $state(false)
 let field: HTMLDivElement | undefined = $state()
@@ -23,7 +20,7 @@ function doJoin() {
 }
 </script>
 
-<div class="room-tools" class:stacked>
+<div class="room-tools">
   <div class="join-field" class:error={joinError} bind:this={field}>
     <input
       class="join-input"
@@ -43,8 +40,7 @@ function doJoin() {
     </button>
   </div>
   <button
-    class="btn subtle new-room"
-    class:block={stacked}
+    class="btn subtle block"
     type="button"
     onclick={() => session.createNewRoom()}
   >

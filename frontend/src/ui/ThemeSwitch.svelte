@@ -2,8 +2,6 @@
 import { setThemeMode, settings, THEME_MODES, type ThemeMode } from "../state/settings.svelte"
 import Icon, { type IconName } from "./Icon.svelte"
 
-let { labelled = false }: { labelled?: boolean } = $props()
-
 const META: Record<ThemeMode, { label: string; icon: IconName }> = {
   light: { label: "Light", icon: "sun" },
   dark: { label: "Dark", icon: "moon" },
@@ -15,7 +13,6 @@ const index = $derived(THEME_MODES.indexOf(settings.themeMode))
 
 <div
   class="theme-switch"
-  class:labelled
   role="radiogroup"
   aria-label="Theme"
   style="--i: {index}; --n: {THEME_MODES.length}"
@@ -26,13 +23,11 @@ const index = $derived(THEME_MODES.indexOf(settings.themeMode))
       type="button"
       role="radio"
       aria-checked={settings.themeMode === mode}
-      aria-label={labelled ? undefined : META[mode].label}
-      title={labelled ? undefined : `${META[mode].label} theme`}
       class:on={settings.themeMode === mode}
       onclick={() => setThemeMode(mode)}
     >
       <Icon name={META[mode].icon} />
-      {#if labelled}<span>{META[mode].label}</span>{/if}
+      <span>{META[mode].label}</span>
     </button>
   {/each}
 </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { Snippet } from "svelte"
 import { view } from "../state/session.svelte"
 import { layout } from "../state/media.svelte"
 import Icon from "./Icon.svelte"
@@ -9,8 +8,6 @@ import Sheet from "./Sheet.svelte"
 import ViewersSheet from "./ViewersSheet.svelte"
 import ThemeSwitch from "./ThemeSwitch.svelte"
 import { rise } from "./motion"
-
-let { children }: { children?: Snippet } = $props()
 
 let menuOpen = $state(false)
 let viewersOpen = $state(false)
@@ -41,7 +38,9 @@ const connText = $derived(
   </span>
 {/snippet}
 
-{#snippet presence()}
+<header class="topbar" class:compact={layout.compact}>
+  <span class="wordmark">Same<em>frame</em></span>
+
   {#if view.isOwner}
     <button
       class="presence presence-btn"
@@ -58,16 +57,15 @@ const connText = $derived(
       {@render presenceBody()}
     </div>
   {/if}
-{/snippet}
 
-{#snippet wordmark()}
-  <span class="wordmark">Same<em>frame</em></span>
-{/snippet}
-
-{#if layout.compact}
-  <header class="topbar compact">
-    {@render wordmark()}
-    {@render presence()}
+  <div class="topbar-actions">
+    {#if !layout.compact}
+      <span class="room-chip" title="Room code">
+        <span class="room-chip-label">Room</span>
+        {view.roomCode ?? "······"}
+      </span>
+      <InviteButton />
+    {/if}
     <button
       class="icon-btn"
       type="button"
@@ -77,46 +75,26 @@ const connText = $derived(
     >
       <Icon name="menu" stroke={2} />
     </button>
-  </header>
+  </div>
+</header>
 
-  <Sheet open={menuOpen} onclose={() => (menuOpen = false)} label="Room and settings">
-    <section class="sheet-section room-card">
-      <span class="eyebrow">You're in room</span>
-      <span class="room-card-code">{view.roomCode ?? "······"}</span>
-      <InviteButton block />
-    </section>
+<Sheet open={menuOpen} onclose={() => (menuOpen = false)} label="Room and settings">
+  <section class="sheet-section room-card">
+    <span class="eyebrow">You're in room</span>
+    <span class="room-card-code">{view.roomCode ?? "······"}</span>
+    <InviteButton block />
+  </section>
 
-    <section class="sheet-section">
-      <span class="eyebrow">Appearance</span>
-      <ThemeSwitch labelled />
-    </section>
+  <section class="sheet-section">
+    <span class="eyebrow">Appearance</span>
+    <ThemeSwitch />
+  </section>
 
-    <section class="sheet-section">
-      <span class="eyebrow">Somewhere else</span>
-      <RoomTools stacked />
-    </section>
-  </Sheet>
-{:else}
-  <header class="topbar">
-    <div class="topbar-lead">
-      {@render wordmark()}
-      {@render presence()}
-    </div>
-
-    <div class="topbar-composer">
-      {@render children?.()}
-    </div>
-
-    <div class="topbar-actions">
-      <ThemeSwitch />
-      <span class="room-chip" title="Room code">
-        <span class="room-chip-label">Room</span>
-        {view.roomCode ?? "······"}
-      </span>
-      <InviteButton />
-    </div>
-  </header>
-{/if}
+  <section class="sheet-section">
+    <span class="eyebrow">Somewhere else</span>
+    <RoomTools />
+  </section>
+</Sheet>
 
 {#if view.isOwner}
   <ViewersSheet open={viewersOpen} onclose={() => (viewersOpen = false)} />
