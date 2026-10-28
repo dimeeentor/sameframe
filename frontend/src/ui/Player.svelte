@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte"
 import { fade } from "svelte/transition"
-import { session, view } from "../state/session.svelte"
+import { chooseResume, resume, session, view } from "../state/session.svelte"
 import { titleOf } from "../state/titles.svelte"
 import Icon from "./Icon.svelte"
 import { swap } from "./motion"
@@ -37,9 +37,20 @@ const gateHint = $derived(
             <span class="leader-ring inner"></span>
             <span class="leader-cross"></span>
           </div>
-          {#key view.joined}
+          {#key resume.code ? "resume" : view.joined}
             <div class="placeholder-inner" in:swap>
-              {#if !view.joined}
+              {#if resume.code}
+                <h2>Pick up where you left off?</h2>
+                <p>Room <span class="resume-code">{resume.code}</span> is still open.</p>
+                <div class="resume-actions">
+                  <button class="btn primary large" type="button" onclick={() => chooseResume(true)}>
+                    Continue
+                  </button>
+                  <button class="btn subtle large" type="button" onclick={() => chooseResume(false)}>
+                    Start fresh
+                  </button>
+                </div>
+              {:else if !view.joined}
                 <span class="eyebrow">Reel 00 · Standby</span>
                 <h2>Watch together</h2>
                 <p>{gateHint}</p>
