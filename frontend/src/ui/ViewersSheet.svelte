@@ -1,20 +1,9 @@
 <script lang="ts">
 import { session, view } from "../state/session.svelte"
-import { showToast } from "../state/toast.svelte"
+import CopyButton from "./CopyButton.svelte"
 import Sheet from "./Sheet.svelte"
 
 let { open, onclose }: { open: boolean; onclose: () => void } = $props()
-
-async function copyOwnerLink() {
-  const link = session.ownerLink()
-  if (!link) return
-  try {
-    await navigator.clipboard.writeText(link)
-    showToast("Owner link copied")
-  } catch {
-    prompt("Copy owner link:", link)
-  }
-}
 </script>
 
 <Sheet {open} {onclose} label="Viewers">
@@ -37,7 +26,14 @@ async function copyOwnerLink() {
   <section class="sheet-section">
     <span class="eyebrow">Owner link</span>
     <p class="viewers-note">Opens this room as owner on another device. Keep it private.</p>
-    <button class="btn subtle block" type="button" onclick={copyOwnerLink}>Copy owner link</button>
+    <CopyButton
+      text={() => session.ownerLink()}
+      label="Copy owner link"
+      done="Owner link copied"
+      title="Copy owner link"
+      variant="subtle"
+      block
+    />
   </section>
 </Sheet>
 

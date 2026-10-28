@@ -377,12 +377,6 @@ button {
   margin-inline-start: auto;
 }
 
-@media (max-width: 900px) {
-  .room-chip {
-    display: none;
-  }
-}
-
 .wordmark {
   font-family: var(--font-display);
   font-size: 27px;
@@ -1913,35 +1907,6 @@ kbd {
   letter-spacing: 0.16em;
 }
 
-.app.compact {
-  gap: 0;
-  padding-block: env(safe-area-inset-top, 0px)
-    calc(28px + env(safe-area-inset-bottom, 0px));
-  padding-inline-start: max(16px, env(safe-area-inset-left, 0px));
-  padding-inline-end: max(16px, env(safe-area-inset-right, 0px));
-}
-
-.topbar.compact {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 60px;
-}
-
-.topbar.compact .wordmark {
-  font-size: 25px;
-}
-
-.topbar.compact .presence {
-  height: 38px;
-  border-radius: 11px;
-  margin-inline-start: auto;
-}
-
-.topbar.compact .topbar-actions {
-  margin-inline-start: 0;
-}
-
 @media (max-width: 380px) {
   .presence-label,
   .presence-sep,
@@ -1950,125 +1915,157 @@ kbd {
   }
 }
 
-.app.compact .main {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 18px;
-}
+/* keep in sync with COMPACT in state/media.svelte.ts */
+@media (max-width: 720px) {
+  .app {
+    gap: 0;
+    padding-block: env(safe-area-inset-top, 0px)
+      calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-inline-start: max(16px, env(safe-area-inset-left, 0px));
+    padding-inline-end: max(16px, env(safe-area-inset-right, 0px));
+  }
 
-.app.compact .stage {
-  position: sticky;
-  z-index: 20;
-  inset-block-start: env(safe-area-inset-top, 0px);
-  box-shadow: 0 calc(-1 * env(safe-area-inset-top, 0px)) 0 var(--bg);
-  gap: 0;
-  max-width: none;
-  margin-inline-start: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
-  margin-inline-end: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
-  background: var(--bg);
-}
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 60px;
+  }
 
-.app.compact .frame::before,
-.app.compact .frame::after {
-  display: none;
-}
+  .topbar .wordmark {
+    font-size: 25px;
+  }
 
-.app.compact .player-wrap {
-  border-radius: 0;
-  box-shadow: none;
-}
+  .topbar .presence {
+    height: 38px;
+    border-radius: 11px;
+    margin-inline-start: auto;
+  }
 
-.app.compact .now {
-  min-height: 46px;
-  padding-inline: 16px;
-  border-block-end: 1px solid var(--line);
-}
+  .topbar .topbar-actions {
+    margin-inline-start: 0;
+  }
 
-.app.compact .now-title {
-  font-size: 14px;
-}
+  .app .main {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
 
-.app.compact .placeholder .eyebrow {
-  display: none;
-}
+  .app .stage {
+    position: sticky;
+    z-index: 20;
+    inset-block-start: env(safe-area-inset-top, 0px);
+    box-shadow: 0 calc(-1 * env(safe-area-inset-top, 0px)) 0 var(--bg);
+    gap: 0;
+    max-width: none;
+    margin-inline-start: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    margin-inline-end: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+    background: var(--bg);
+  }
 
-.app.compact .placeholder h2 {
-  margin-block-start: 0;
-}
+  .app .frame::before,
+  .app .frame::after {
+    display: none;
+  }
 
-.app.compact .placeholder p {
-  margin-block-start: 8px;
-  font-size: 13px;
-}
+  .app .player-wrap {
+    border-radius: 0;
+    box-shadow: none;
+  }
 
-.app.compact .placeholder .btn {
-  margin-block-start: 16px;
-}
+  .app .now {
+    min-height: 46px;
+    padding-inline: 16px;
+    border-block-end: 1px solid var(--line);
+  }
 
-.app.compact .composer input {
-  height: 40px;
-  font-size: 16px;
-}
+  .app .now-title {
+    font-size: 14px;
+  }
 
-.app.compact .composer-lead {
-  height: 40px;
-  width: 54px;
-}
+  .app .placeholder .eyebrow {
+    display: none;
+  }
 
-.app.compact .composer-kbd {
-  display: none;
-}
+  .app .placeholder h2 {
+    margin-block-start: 0;
+  }
 
-.app.compact .composer-actions .btn {
-  height: 42px;
-  font-size: 14px;
-}
+  .app .placeholder p {
+    margin-block-start: 8px;
+    font-size: 13px;
+  }
 
-.app.compact .panel {
-  max-height: none;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-}
+  .app .placeholder .btn {
+    margin-block-start: 16px;
+  }
 
-.app.compact .queue {
-  overflow: visible;
-}
+  .app .composer input {
+    height: 40px;
+    font-size: 16px;
+  }
 
-.app.compact .queue-head {
-  padding-block: 4px 10px;
-}
+  .app .composer-lead {
+    height: 40px;
+    width: 54px;
+  }
 
-.app.compact .queue-list {
-  margin-inline: -8px;
-  overflow: visible;
-}
+  .app .composer-kbd {
+    display: none;
+  }
 
-.app.compact .qrow {
-  grid-template-columns: 30px 88px minmax(0, 1fr) 32px;
-  gap: 10px;
-}
+  .app .composer-actions .btn {
+    height: 42px;
+    font-size: 14px;
+  }
 
-/* long titles stay on one line */
-.app.compact .qtext {
-  display: block;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  .app .panel {
+    max-height: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
 
-.app.compact .qthumb {
-  width: 88px;
-}
+  .app .queue {
+    overflow: visible;
+  }
 
-.app.compact .qdel {
-  width: 32px;
-  height: 32px;
-}
+  .app .queue-head {
+    padding-block: 4px 10px;
+  }
 
-.app.compact .empty {
-  padding-block: 20px 12px;
-  padding-inline: 24px;
+  .app .queue-list {
+    margin-inline: -8px;
+    overflow: visible;
+  }
+
+  .app .qrow {
+    grid-template-columns: 30px 88px minmax(0, 1fr) 32px;
+    gap: 10px;
+  }
+
+  /* long titles stay on one line */
+  .app .qtext {
+    display: block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app .qthumb {
+    width: 88px;
+  }
+
+  .app .qdel {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app .empty {
+    padding-block: 20px 12px;
+    padding-inline: 24px;
+  }
 }
