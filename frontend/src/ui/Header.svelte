@@ -104,14 +104,16 @@ const connText = $derived(
 
 <style>
 .presence-btn {
+  position: relative;
   font: inherit;
   font-size: 12px;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
 }
-.presence-btn:hover {
-  border-color: var(--line-strong);
-  color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .presence-btn:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
 }
 .presence-btn:focus-visible {
   outline: 2px solid var(--accent);

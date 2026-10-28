@@ -54,7 +54,7 @@ let { open, onclose }: { open: boolean; onclose: () => void } = $props()
 .viewer-name {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow: clip;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
