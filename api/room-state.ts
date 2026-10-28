@@ -86,7 +86,7 @@ function loadMsg(s: RoomState, videoId: VideoId): ServerMsg {
     type: "load",
     videoId,
     currentTime: 0,
-    isPlaying: true,
+    isPlaying: s.isPlaying,
     rev: s.rev,
     queue: s.queue,
     queueIndex: s.queueIndex,
@@ -142,7 +142,7 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       const next = {
         ...queueLoad(s, msg.videoId),
         currentTime: 0,
-        isPlaying: true,
+        isPlaying: false,
         updatedAt: Date.now(),
         rev: s.rev + 1,
       }
@@ -165,7 +165,7 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       const next = {
         ...queueLoad(added, msg.videoId),
         currentTime: 0,
-        isPlaying: true,
+        isPlaying: false,
         updatedAt: Date.now(),
         rev: added.rev + 1,
       }
