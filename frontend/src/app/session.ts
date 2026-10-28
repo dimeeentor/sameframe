@@ -100,7 +100,9 @@ export function createSession(
   }
   const subs = new Set<(snap: SyncSnapshot) => void>()
   const timers: ReturnType<typeof setInterval>[] = []
-  let pauseAfterLoad: ReturnType<typeof setTimeout> | null = null
+  // a load that should end up paused is muted-autoplaying; this holds the time
+  // to pause and seek to once it actually starts playing
+  let pausePending: number | null = null
   let playerHost: HTMLElement | null = null
   let started = false
   let lastSyncAt = 0
@@ -209,6 +211,29 @@ export function createSession(
     player.setVolume(100)
   }
 
+  // loading autoplays muted, which skips YouTube's splash screen; a video that
+  // shouldn't be playing is paused again right after
+  function loadIntoPlayer(id: VideoId, at: number, playing: boolean) {
+    suppress(LOAD_SUPPRESS_MS)
+    player.mute()
+    player.load(id, at)
+    if (playing) {
+      assertSound()
+      suppress(INDUCED_PLAY_MS)
+      player.play()
+    } else {
+      // stays muted until it is paused, so the brief autoplay is silent
+      pausePending = at
+    }
+  }
+
+  // a play command arrived while the muted autoplay was still pending
+  function cancelPendingPause() {
+    if (pausePending === null) return
+    pausePending = null
+    assertSound()
+  }
+
   function applyRemoteVideo(
     videoId: VideoId,
     currentTime: number,
@@ -228,24 +253,8 @@ export function createSession(
     s.isPlaying = isPlaying
     anchorOnPlay = currentTime === 0
     remoteChangeAt = Date.now()
-    if (pauseAfterLoad) {
-      clearTimeout(pauseAfterLoad)
-      pauseAfterLoad = null
-    }
-    suppress(LOAD_SUPPRESS_MS)
-    player.mute()
-    player.load(videoId, currentTime)
-    assertSound()
-    if (isPlaying) {
-      suppress(INDUCED_PLAY_MS)
-      player.play()
-    } else {
-      pauseAfterLoad = setTimeout(() => {
-        suppress(INDUCED_MS)
-        player.pause()
-        if (currentTime) player.seek(currentTime)
-      }, 800)
-    }
+    pausePending = null
+    loadIntoPlayer(videoId, currentTime, isPlaying)
   }
 
   function correctDrift(remoteTime: number, remotePlaying: boolean) {
@@ -265,13 +274,15 @@ export function createSession(
       suppress(INDUCED_MS)
       player.seek(remoteTime)
     }
-    const effective = isSuppressed()
-      ? s.isPlaying
-      : st === "playing" || st === "buffering"
+    const effective =
+      isSuppressed() || pausePending !== null
+        ? s.isPlaying
+        : st === "playing" || st === "buffering"
     if (remotePlaying === effective) return
     s.isPlaying = remotePlaying
     remoteChangeAt = Date.now()
     if (remotePlaying) {
+      cancelPendingPause()
       suppress(INDUCED_PLAY_MS)
       player.play()
     } else {
@@ -447,6 +458,15 @@ export function createSession(
         publish()
       }
     }
+    if (pausePending !== null && e.state === "playing") {
+      const at = pausePending
+      pausePending = null
+      suppress(INDUCED_MS)
+      player.pause()
+      if (at) player.seek(at)
+      assertSound()
+      return
+    }
     if (priming) {
       if (e.state !== "playing") return
       priming = false
@@ -526,19 +546,13 @@ export function createSession(
   function loadVideo(id: VideoId) {
     const gated = !s.joined
     s.videoId = id
-    s.isPlaying = true
-    noteRemote(0, true)
+    s.isPlaying = false
+    noteRemote(0, false)
     anchorOnPlay = true
-    if (pauseAfterLoad) {
-      clearTimeout(pauseAfterLoad)
-      pauseAfterLoad = null
-    }
-    // a hand-picked video rides the user's own gesture, so it gets sound
+    pausePending = null
+    // a hand-picked video loads paused; join() primes a gated one the same way
     if (gated) join()
-    else {
-      assertSound()
-      player.load(id, 0)
-    }
+    else loadIntoPlayer(id, 0, false)
     publish()
     send({ type: "load", videoId: id })
   }
@@ -586,6 +600,7 @@ export function createSession(
       s.isPlaying = false
       send({ type: "pause", currentTime: t })
     } else {
+      cancelPendingPause()
       suppress(INDUCED_PLAY_MS)
       player.play()
       s.isPlaying = true
@@ -613,11 +628,7 @@ export function createSession(
     started = false
     timers.forEach(clearInterval)
     timers.length = 0
-    // outlives the intervals, and a stopped session must not drive the player
-    if (pauseAfterLoad) {
-      clearTimeout(pauseAfterLoad)
-      pauseAfterLoad = null
-    }
+    pausePending = null
     transport.stop()
   }
 
