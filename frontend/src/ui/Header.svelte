@@ -2,7 +2,7 @@
 import { view } from "../state/session.svelte"
 import { layout } from "../state/media.svelte"
 import Icon from "./Icon.svelte"
-import InviteButton from "./InviteButton.svelte"
+import CopyButton from "./CopyButton.svelte"
 import RoomTools from "./RoomTools.svelte"
 import Sheet from "./Sheet.svelte"
 import ViewersSheet from "./ViewersSheet.svelte"
@@ -38,7 +38,7 @@ const connText = $derived(
   </span>
 {/snippet}
 
-<header class="topbar" class:compact={layout.compact}>
+<header class="topbar">
   <span class="wordmark">Same<em>frame</em></span>
 
   {#if view.isOwner}
@@ -64,7 +64,7 @@ const connText = $derived(
         <span class="room-chip-label">Room</span>
         {view.roomCode ?? "······"}
       </span>
-      <InviteButton />
+      <CopyButton text={() => view.shareUrl} label="Invite" done="Link copied" title="Copy invite link" />
     {/if}
     <button
       class="icon-btn"
@@ -79,11 +79,13 @@ const connText = $derived(
 </header>
 
 <Sheet open={menuOpen} onclose={() => (menuOpen = false)} label="Room and settings">
-  <section class="sheet-section room-card">
-    <span class="eyebrow">You're in room</span>
-    <span class="room-card-code">{view.roomCode ?? "······"}</span>
-    <InviteButton block />
-  </section>
+  {#if layout.compact}
+    <section class="sheet-section room-card">
+      <span class="eyebrow">You're in room</span>
+      <span class="room-card-code">{view.roomCode ?? "······"}</span>
+      <CopyButton text={() => view.shareUrl} label="Copy invite link" done="Link copied" title="Copy invite link" block />
+    </section>
+  {/if}
 
   <section class="sheet-section">
     <span class="eyebrow">Appearance</span>
