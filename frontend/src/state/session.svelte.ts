@@ -181,16 +181,7 @@ export const session = {
     whenReady((s) => s.attachPlayer(host))
   },
   join() {
-    if (_session) _session.join()
-    else whenReady((s) => s.join())
-  },
-  subscribe(cb: (s: SyncSnapshot) => void) {
-    if (_session) return _session.subscribe(cb)
-    let off: () => void = () => {}
-    void ready.then(() => {
-      off = _session!.subscribe(cb)
-    })
-    return () => off()
+    whenReady((s) => s.join())
   },
   loadVideo(id: VideoId) {
     whenReady((s) => s.loadVideo(id))

@@ -36,7 +36,7 @@ function join() {
       <span class="eyebrow">Room</span>
       <div class="gate-code" aria-label={code ? `Room ${code}` : undefined}>
         {#each { length: 6 }, i (i)}
-          <span style="--i: {i}">{code?.[i] ?? ""}</span>
+          <span style:--i={i}>{code?.[i] ?? ""}</span>
         {/each}
       </div>
       <button class="btn primary large block gate-join" type="button" onclick={join}>

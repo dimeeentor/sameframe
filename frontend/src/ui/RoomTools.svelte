@@ -6,7 +6,9 @@ import { shake } from "./motion"
 
 let joinCode = $state("")
 let joinError = $state(false)
-let field: HTMLDivElement | undefined = $state()
+let createFailed = $state(false)
+let creating = $state(false)
+let field: HTMLDivElement | undefined
 
 function doJoin() {
   const parsed = parseRoomCode(joinCode)
@@ -18,10 +20,21 @@ function doJoin() {
   joinError = false
   session.joinRoom(parsed)
 }
+
+async function doCreate() {
+  creating = true
+  createFailed = false
+  try {
+    await session.createNewRoom()
+  } catch {
+    createFailed = true
+    creating = false
+  }
+}
 </script>
 
 <div class="room-tools">
-  <div class="join-field" class:error={joinError} bind:this={field}>
+  <div class={["join-field", { error: joinError }]} bind:this={field}>
     <input
       class="join-input"
       placeholder="Room code"
@@ -42,9 +55,10 @@ function doJoin() {
   <button
     class="btn subtle block"
     type="button"
-    onclick={() => session.createNewRoom()}
+    disabled={creating}
+    onclick={doCreate}
   >
     <Icon name="plus" stroke={2} />
-    New room
+    {createFailed ? "Couldn't create, try again" : "New room"}
   </button>
 </div>

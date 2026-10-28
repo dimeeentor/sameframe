@@ -23,8 +23,7 @@ function onFillEnd(e: TransitionEvent) {
     {#if view.queue.length}
       <span class="queue-count">{String(view.queue.length).padStart(2, "0")}</span>
       <button
-        class="hold-btn"
-        class:holding
+        class={["hold-btn", { holding }]}
         type="button"
         title="Press and hold to clear the queue"
         onpointerdown={(e) => e.button === 0 && (holding = true)}

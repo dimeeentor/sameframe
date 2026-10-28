@@ -1,5 +1,6 @@
 /** Theme. Not sync domain (the server never sees it), so it stays out of the
- *  session. Side effects apply on change and at module init. */
+ *  session. */
+import { MediaQuery } from "svelte/reactivity"
 
 export type Theme = "light" | "dark"
 /** What the user picked. "system" tracks the OS instead of pinning a theme. */
@@ -16,34 +17,41 @@ function parseMode(v: string | null): ThemeMode | null {
   return v === "light" || v === "dark" || v === "system" ? v : null
 }
 
-const prefersLight = matchMedia("(prefers-color-scheme: light)")
-
-function systemTheme(): Theme {
-  return prefersLight.matches ? "light" : "dark"
+function readMode(): ThemeMode | null {
+  try {
+    return parseMode(localStorage.getItem(THEME_KEY))
+  } catch {
+    return null
+  }
 }
 
-export const settings = $state({
-  themeMode: parseMode(localStorage.getItem(THEME_KEY)) ?? "system",
-  /** The theme actually painted. Derived from themeMode, never set directly. */
-  theme: "light" as Theme,
-})
+const prefersLight = new MediaQuery("prefers-color-scheme: light")
 
-function applyTheme() {
-  settings.theme =
-    settings.themeMode === "system" ? systemTheme() : settings.themeMode
-  document.documentElement.setAttribute("data-theme", settings.theme)
+class Settings {
+  themeMode = $state<ThemeMode>(readMode() ?? "system")
+  /** The theme actually painted. */
+  theme = $derived<Theme>(
+    this.themeMode === "system"
+      ? prefersLight.current
+        ? "light"
+        : "dark"
+      : this.themeMode,
+  )
 }
-applyTheme()
 
-// Listen unconditionally: the user can switch back to "system" at any point.
-prefersLight.addEventListener("change", () => {
-  if (settings.themeMode === "system") applyTheme()
+export const settings = new Settings()
+
+$effect.root(() => {
+  $effect(() => {
+    document.documentElement.setAttribute("data-theme", settings.theme)
+  })
 })
 
 export function setThemeMode(mode: ThemeMode) {
   settings.themeMode = mode
-  localStorage.setItem(THEME_KEY, mode)
-  applyTheme()
+  try {
+    localStorage.setItem(THEME_KEY, mode)
+  } catch {}
 }
 
 /** Light -> dark -> system, for the single-button desktop control. */

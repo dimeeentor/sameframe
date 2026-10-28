@@ -8,7 +8,7 @@ import { swap } from "./motion"
 
 let { stageHeight = $bindable(0) }: { stageHeight?: number } = $props()
 
-let host: HTMLDivElement | undefined = $state()
+let host: HTMLDivElement | undefined
 
 onMount(() => {
   if (host) session.attachPlayer(host)
@@ -23,7 +23,7 @@ const gateHint = $derived(
 )
 </script>
 
-<div class="stage" class:playing={view.isPlaying && !!view.videoId} bind:clientHeight={stageHeight}>
+<div class={["stage", { playing: view.isPlaying && !!view.videoId }]} bind:clientHeight={stageHeight}>
   <div class="frame">
     <div class="player-wrap">
       <div bind:this={host} id="player"></div>

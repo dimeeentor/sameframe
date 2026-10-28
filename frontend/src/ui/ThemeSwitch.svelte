@@ -13,17 +13,17 @@ const index = $derived(THEME_MODES.indexOf(settings.themeMode))
 
 <div
   class="theme-switch"
-  role="radiogroup"
+  role="group"
   aria-label="Theme"
-  style="--i: {index}; --n: {THEME_MODES.length}"
+  style:--i={index}
+  style:--n={THEME_MODES.length}
 >
   <span class="theme-thumb" aria-hidden="true"></span>
   {#each THEME_MODES as mode (mode)}
     <button
       type="button"
-      role="radio"
-      aria-checked={settings.themeMode === mode}
-      class:on={settings.themeMode === mode}
+      aria-pressed={settings.themeMode === mode}
+      class={{ on: settings.themeMode === mode }}
       onclick={() => setThemeMode(mode)}
     >
       <Icon name={META[mode].icon} />
