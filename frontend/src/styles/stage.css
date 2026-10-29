@@ -86,8 +86,8 @@
   color: var(--screen-ink);
   background: radial-gradient(
     120% 100% at 50% 38%,
-    oklch(0.225 0.017 58.6),
-    oklch(0.13 0.004 69.8) 72%
+    color-mix(in oklch, var(--screen-accent) 16%, var(--screen)),
+    var(--screen) 72%
   );
   transform: translateZ(0);
 }
@@ -154,7 +154,7 @@
     transparent 0deg,
     transparent 250deg,
     color-mix(in oklch, var(--screen-accent) 20%, transparent) 359deg,
-    oklch(0.775 0.138 41.4 / 0.5) 360deg
+    color-mix(in oklch, var(--screen-accent) 50%, transparent) 360deg
   );
 }
 
