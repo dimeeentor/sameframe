@@ -261,8 +261,8 @@
     opacity: 1;
   }
   .qdel:hover {
-    color: var(--hot);
-    background: color-mix(in oklch, var(--hot) 12%, transparent);
+    color: var(--berry);
+    background: color-mix(in oklch, var(--berry) 12%, transparent);
   }
 }
 

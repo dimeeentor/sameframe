@@ -53,7 +53,6 @@
   --accent-glow: color-mix(in oklch, var(--accent) 55%, transparent);
 
   --live: light-dark(oklch(0.614 0.15 152.3), oklch(0.8 0.182 151.7));
-  --hot: light-dark(oklch(0.6 0.19 38), oklch(0.72 0.17 40));
   --berry: light-dark(oklch(0.55 0.2 8), oklch(0.68 0.19 8));
   --warm: light-dark(oklch(0.699 0.152 69.6), oklch(0.813 0.145 78));
 

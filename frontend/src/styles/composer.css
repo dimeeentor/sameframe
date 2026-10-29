@@ -21,8 +21,8 @@
 }
 
 .composer.invalid {
-  border-color: var(--hot);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--hot) 16%, transparent);
+  border-color: var(--berry);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--berry) 16%, transparent);
 }
 
 .composer-field {
