@@ -111,8 +111,8 @@
 .icon-btn {
   position: relative;
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);

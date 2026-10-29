@@ -70,7 +70,7 @@ kbd {
   height: 40px;
   margin: 3px;
   place-items: center;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   color: var(--ink);
   background: var(--surface-2);
 }
