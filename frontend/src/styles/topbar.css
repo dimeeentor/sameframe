@@ -5,6 +5,10 @@
   min-height: 44px;
 }
 
+.topbar.bare {
+  justify-content: center;
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;

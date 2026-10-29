@@ -61,7 +61,7 @@ export class RoomDurableObject extends DurableObject<Env> {
 
     if (request.headers.get("Upgrade") === "websocket") {
       if (!code) return new Response("missing room code", { status: 400 })
-      return this.handleWebSocketUpgrade(code, url)
+      return this.handleWebSocketUpgrade(url)
     }
     if (url.pathname === "/create" && request.method === "POST") {
       if (!code) return new Response("missing room code", { status: 400 })
@@ -116,7 +116,9 @@ export class RoomDurableObject extends DurableObject<Env> {
     )
   }
 
-  private handleWebSocketUpgrade(code: RoomCode, url: URL): Response {
+  private handleWebSocketUpgrade(url: URL): Response {
+    const state = this.getState()
+    if (!state) return new Response("room not found", { status: 404 })
     const idParam = url.searchParams.get("clientId")
     const clientId =
       idParam && CLIENT_ID_RE.test(idParam) ? idParam : crypto.randomUUID()
@@ -136,7 +138,7 @@ export class RoomDurableObject extends DurableObject<Env> {
       isOwner,
     } satisfies SocketMeta)
 
-    server.send(JSON.stringify(getSyncPayload(this.ensureRoom(code))))
+    server.send(JSON.stringify(getSyncPayload(state)))
     this.broadcastClientCount()
     setTimeout(() => this.broadcastClientCount(), STALE_MS + 1000)
 

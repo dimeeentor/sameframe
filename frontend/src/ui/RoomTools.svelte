@@ -6,19 +6,22 @@ import { shake } from "./motion"
 
 let joinCode = $state("")
 let joinError = $state(false)
+let joinMsg = $state("")
 let createFailed = $state(false)
 let creating = $state(false)
 let field: HTMLDivElement | undefined
 
-function doJoin() {
+async function doJoin() {
   const parsed = parseRoomCode(joinCode)
-  if (!parsed) {
+  try {
+    if (!parsed) throw new Error("Enter a 6-character room code")
+    joinError = false
+    await session.joinRoom(parsed)
+  } catch (e) {
+    joinMsg = e instanceof Error ? e.message : "Couldn't join"
     joinError = true
     shake(field)
-    return
   }
-  joinError = false
-  session.joinRoom(parsed)
 }
 
 async function doCreate() {
@@ -52,6 +55,9 @@ async function doCreate() {
       <Icon name="arrow" stroke={2} />
     </button>
   </div>
+  {#if joinError}
+    <p class="join-msg" role="alert">{joinMsg}</p>
+  {/if}
   <button
     class="btn subtle block"
     type="button"

@@ -1,12 +1,12 @@
 <script lang="ts">
-import { resume, session, view } from "../state/session.svelte"
+import { notFound, resume, session, view } from "../state/session.svelte"
 
 let dialog: HTMLDialogElement | undefined = $state()
 let dismissed = $state(false)
 
 $effect(() => {
   if (!dialog || dismissed) return
-  const show = !view.joined && !view.kicked && !resume.code
+  const show = !view.joined && !view.kicked && !resume.code && !notFound.code
   if (show && !dialog.open) dialog.showModal()
   else if (!show && dialog.open) dialog.close()
 })
