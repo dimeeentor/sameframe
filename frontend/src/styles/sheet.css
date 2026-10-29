@@ -36,7 +36,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: var(--radius-lg);
   outline: 2px solid transparent;
   background: var(--surface);
   box-shadow: var(--shadow-lg);
@@ -74,7 +74,7 @@
 .sheet-handle {
   width: 38px;
   height: 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-pill);
   background: var(--line-strong);
 }
 
@@ -92,7 +92,6 @@
     width: min(420px, 100% - 32px);
     height: fit-content;
     margin: auto;
-    border-radius: 22px;
   }
 
   .sheet-grab {

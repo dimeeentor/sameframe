@@ -5,7 +5,7 @@
   min-height: 0;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 25px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   max-height: var(--stage-h, 560px);

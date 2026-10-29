@@ -61,7 +61,7 @@ let { open, onclose }: { open: boolean; onclose: () => void } = $props()
 .viewer-tag {
   padding: 2px 8px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--muted);
   font-size: 11px;
 }
