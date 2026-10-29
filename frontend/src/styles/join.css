@@ -72,18 +72,20 @@ kbd {
 .join-go {
   position: relative;
   display: grid;
-  width: 40px;
   height: 40px;
   margin: 3px;
+  padding-inline: 16px;
   place-items: center;
   border-radius: var(--radius-xs);
-  color: var(--ink);
+  color: var(--ink-2);
   background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 550;
 }
 
-.join-go .icon {
-  width: 15px;
-  height: 15px;
+.join-go.ready {
+  color: var(--accent-ink);
+  background: var(--accent);
 }
 
 .btn::after,
@@ -100,5 +102,8 @@ kbd {
 @media (hover: hover) and (pointer: fine) {
   .join-go:hover {
     background: var(--surface-3);
+  }
+  .join-go.ready:hover {
+    background: var(--accent-hover);
   }
 }

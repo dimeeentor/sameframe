@@ -95,7 +95,7 @@ const connText = $derived(
   </section>
 
   <section class="sheet-section">
-    <span class="eyebrow">Somewhere else</span>
+    <span class="eyebrow">Another room</span>
     <RoomTools />
   </section>
 </Sheet>

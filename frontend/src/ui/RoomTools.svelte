@@ -10,6 +10,7 @@ let joinMsg = $state("")
 let createFailed = $state(false)
 let creating = $state(false)
 let field: HTMLDivElement | undefined
+const ready = $derived(parseRoomCode(joinCode) !== null)
 
 async function doJoin() {
   const parsed = parseRoomCode(joinCode)
@@ -51,9 +52,7 @@ async function doCreate() {
       oninput={() => (joinError = false)}
       onkeydown={(e) => e.key === "Enter" && doJoin()}
     />
-    <button class="join-go" type="button" aria-label="Join room" title="Join room" onclick={doJoin}>
-      <Icon name="arrow" stroke={2} />
-    </button>
+    <button class={["join-go", { ready }]} type="button" onclick={doJoin}>Join</button>
   </div>
   {#if joinError}
     <p class="join-msg" role="alert">{joinMsg}</p>
