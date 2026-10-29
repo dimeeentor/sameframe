@@ -28,7 +28,6 @@
   }
 
   .topbar .presence {
-    height: 38px;
     border-radius: var(--radius-sm);
     margin-inline-start: auto;
   }
