@@ -1,10 +1,12 @@
 <script lang="ts">
-import type { Snippet } from "svelte"
+import { tick, type Snippet } from "svelte"
 
 type Props = { open: boolean; onclose: () => void; label: string; children: Snippet }
 let { open, onclose, label, children }: Props = $props()
 
+let dialog: HTMLDialogElement | undefined = $state()
 let panel: HTMLDivElement | undefined = $state()
+let shown = $state(false)
 let scrim: HTMLDivElement | undefined
 
 let dragging = false
@@ -48,23 +50,41 @@ function onpointerup() {
 }
 
 $effect(() => {
-  if (!open) return
-  panel?.focus({ preventScroll: true })
+  if (!dialog) return
+  if (open) {
+    if (!dialog.open) dialog.showModal()
+    dialog.getBoundingClientRect()
+    shown = true
+    tick().then(() => {
+      if (open) panel?.focus({ preventScroll: true })
+    })
+    return
+  }
+  shown = false
+  if (!dialog.open) return
+  const timer = setTimeout(() => dialog?.close(), 260)
+  return () => clearTimeout(timer)
 })
+
+function oncancel(e: Event) {
+  e.preventDefault()
+  onclose()
+}
+
+function onnativeclose() {
+  if (open) onclose()
+}
 </script>
 
-<svelte:window onkeydown={(e) => open && e.key === "Escape" && onclose()} />
-
-<div class={["sheet-root", { open }]} inert={!open}>
+<dialog
+  class={["sheet-root", { open: shown }]}
+  bind:this={dialog}
+  aria-label={label}
+  {oncancel}
+  onclose={onnativeclose}
+>
   <div class="sheet-scrim" bind:this={scrim} onclick={onclose} aria-hidden="true"></div>
-  <div
-    class="sheet"
-    bind:this={panel}
-    role="dialog"
-    aria-modal="true"
-    aria-label={label}
-    tabindex="-1"
-  >
+  <div class="sheet" bind:this={panel} tabindex="-1">
     <div
       class="sheet-grab"
       role="presentation"
@@ -79,4 +99,23 @@ $effect(() => {
       {@render children()}
     </div>
   </div>
-</div>
+</dialog>
+
+<style>
+  .sheet-root {
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    color: inherit;
+    background: transparent;
+  }
+
+  .sheet-root::backdrop {
+    background: transparent;
+  }
+</style>
