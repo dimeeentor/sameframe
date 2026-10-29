@@ -40,8 +40,14 @@ kbd {
 }
 
 .join-field.error {
-  border-color: var(--hot);
-  box-shadow: 0 0 0 4px color-mix(in oklch, var(--hot) 16%, transparent);
+  border-color: var(--berry);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--berry) 16%, transparent);
+}
+
+.join-msg {
+  margin: 0;
+  color: var(--berry);
+  font-size: 12px;
 }
 
 .join-input {

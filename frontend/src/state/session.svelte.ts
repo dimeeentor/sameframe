@@ -60,9 +60,18 @@ export function chooseResume(cont: boolean) {
   answerResume(cont)
 }
 
-async function ensureRoomCode(): Promise<RoomCode> {
+export const notFound = $state<{ code: RoomCode | null }>({ code: null })
+
+async function ensureRoomCode(): Promise<RoomCode | null> {
   const existing = getRoomFromUrl()
-  if (existing) return existing
+  if (existing) {
+    const res = await fetch(`/api/rooms/${existing}`).catch(() => null)
+    if (res?.status === 404) {
+      notFound.code = existing
+      return null
+    }
+    return existing
+  }
 
   // no ?room=: offer the previous room, else create one. Either way rewrite the URL
   let code = await findResumable()
@@ -168,6 +177,7 @@ function startSession(code: RoomCode) {
 
 const ready: Promise<void> = (async () => {
   const code = await ensureRoomCode()
+  if (!code) return
   _code = code
   startSession(code)
 })().catch((e) => console.error("[sameframe] room init failed", e))
@@ -230,9 +240,11 @@ export const session = {
     if (code && data.ownerToken) saveToken(code, data.ownerToken)
     location.href = `${location.origin}/?room=${data.code}`
   },
-  joinRoom(code: string) {
+  async joinRoom(code: string) {
     const parsed = parseRoomCode(code)
     if (!parsed) throw new Error("invalid room code")
+    const res = await fetch(`/api/rooms/${parsed}`)
+    if (!res.ok) throw new Error("That room doesn't exist")
     location.href = `${location.origin}/?room=${parsed}`
   },
   get roomCode() {

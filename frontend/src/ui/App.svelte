@@ -1,5 +1,5 @@
 <script lang="ts">
-import { session, view } from "../state/session.svelte"
+import { notFound, session, view } from "../state/session.svelte"
 import { ensureTitle, titleOf } from "../state/titles.svelte"
 import { isTypingTarget } from "../app/domain"
 import Header from "./Header.svelte"
@@ -52,8 +52,18 @@ function onKeydown(e: KeyboardEvent) {
 
 <div class="app">
   <Header />
-  <main class="main" style:--stage-h={stageHeight ? `${stageHeight}px` : undefined}>
-    {#if view.kicked}
+  <main class={["main", { centered: notFound.code }]} style:--stage-h={stageHeight ? `${stageHeight}px` : undefined}>
+    {#if notFound.code}
+      <div class="kicked">
+        <h2 class="kicked-title">Room not found</h2>
+        <p class="kicked-note">
+          There's no room {notFound.code}. It may have expired, or the code is mistyped.
+        </p>
+        <button class="btn primary large" type="button" onclick={() => session.createNewRoom()}>
+          New room
+        </button>
+      </div>
+    {:else if view.kicked}
       <div class="kicked">
         <h2 class="kicked-title">You left the room</h2>
         <p class="kicked-note">The video stopped so this device can sleep.</p>
@@ -75,6 +85,12 @@ function onKeydown(e: KeyboardEvent) {
   gap: 14px;
   min-height: 50dvh;
   text-align: center;
+}
+.main.centered {
+  align-content: center;
+}
+.centered .kicked {
+  min-height: 0;
 }
 .kicked-title {
   margin: 0;

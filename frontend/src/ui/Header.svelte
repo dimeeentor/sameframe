@@ -1,5 +1,5 @@
 <script lang="ts">
-import { view } from "../state/session.svelte"
+import { notFound, view } from "../state/session.svelte"
 import { layout } from "../state/media.svelte"
 import Icon from "./Icon.svelte"
 import CopyButton from "./CopyButton.svelte"
@@ -38,9 +38,10 @@ const connText = $derived(
   </span>
 {/snippet}
 
-<header class="topbar">
+<header class={["topbar", { bare: notFound.code }]}>
   <span class="wordmark">Same<em>frame</em></span>
 
+  {#if !notFound.code}
   {#if view.isOwner}
     <button
       class="presence presence-btn"
@@ -76,6 +77,7 @@ const connText = $derived(
       <Icon name="menu" stroke={2} />
     </button>
   </div>
+  {/if}
 </header>
 
 <Sheet open={menuOpen} onclose={() => (menuOpen = false)} label="Room and settings">
