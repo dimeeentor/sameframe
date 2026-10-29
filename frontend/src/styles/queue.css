@@ -54,8 +54,8 @@
   display: grid;
   place-items: center;
   border-radius: inherit;
-  color: white;
-  background: var(--hot);
+  color: var(--accent-ink);
+  background: var(--accent);
   clip-path: inset(0 100% 0 0);
   transition: clip-path 200ms var(--ease-out);
 }
