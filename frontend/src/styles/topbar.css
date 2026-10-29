@@ -1,0 +1,235 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 27px;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.wordmark em {
+  color: var(--accent);
+  font-style: italic;
+  padding-inline-start: 0.02em;
+}
+
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding-inline: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.presence-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--warm);
+}
+
+[data-conn="open"] .presence-dot {
+  background: var(--live);
+}
+
+[data-conn="open"] .presence-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-conn="open"] .presence-dot::after {
+    animation: breathe 2.4s var(--ease-out) infinite;
+  }
+}
+
+[data-conn="connecting"] .presence-dot,
+[data-conn="offline"] .presence-dot {
+  animation: blink 1.2s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes breathe {
+  from {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+@keyframes blink {
+  to {
+    opacity: 0.35;
+  }
+}
+
+.presence-conn {
+  display: inline-grid;
+  color: var(--ink-2);
+  font-weight: 550;
+}
+
+.presence-conn > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.presence-conn > .shown {
+  visibility: visible;
+}
+
+.presence-sep {
+  width: 1px;
+  height: 10px;
+  background: var(--line-strong);
+}
+
+.presence-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.presence-num {
+  display: inline-block;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.room-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding-inline: 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+}
+
+.room-chip-label {
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  letter-spacing: 0;
+}
+
+.theme-switch {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.theme-thumb {
+  position: absolute;
+  inset-block: 3px;
+  inset-inline-start: 3px;
+  width: calc((100% - 6px) / var(--n));
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 1px var(--line);
+  transform: translateX(calc(var(--i) * 100%));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .theme-thumb {
+    transition: transform 280ms var(--ease-in-out);
+  }
+}
+
+.theme-switch button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  height: 40px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.theme-switch button .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.theme-switch button.on {
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-switch button:not(.on):hover {
+    color: var(--ink-2);
+  }
+}
+
+.swap-cell {
+  display: grid;
+}
+
+.swap-label {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition:
+    opacity 200ms var(--ease-out),
+    filter 200ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swap-label {
+    transition:
+      opacity 200ms var(--ease-out),
+      filter 200ms var(--ease-out),
+      transform 240ms var(--ease-out);
+  }
+}
+
+.swap-label[aria-hidden="true"] {
+  opacity: 0;
+  filter: blur(3px);
+  transform: scale(0.92);
+}

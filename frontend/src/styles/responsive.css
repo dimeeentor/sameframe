@@ -1,0 +1,160 @@
+@media (max-width: 380px) {
+  .presence-label,
+  .presence-sep,
+  .presence-conn {
+    display: none;
+  }
+}
+
+/* keep in sync with COMPACT in state/media.svelte.ts */
+@media (max-width: 720px) {
+  .app {
+    gap: 0;
+    padding-block: env(safe-area-inset-top, 0px)
+      calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-inline-start: max(16px, env(safe-area-inset-left, 0px));
+    padding-inline-end: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 60px;
+  }
+
+  .topbar .wordmark {
+    font-size: 25px;
+  }
+
+  .topbar .presence {
+    height: 38px;
+    border-radius: 11px;
+    margin-inline-start: auto;
+  }
+
+  .topbar .topbar-actions {
+    margin-inline-start: 0;
+  }
+
+  .app .main {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .app .stage {
+    position: sticky;
+    z-index: 20;
+    inset-block-start: env(safe-area-inset-top, 0px);
+    box-shadow: 0 calc(-1 * env(safe-area-inset-top, 0px)) 0 var(--bg);
+    gap: 0;
+    max-width: none;
+    margin-inline-start: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    margin-inline-end: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+    background: var(--bg);
+  }
+
+  .app .frame::before,
+  .app .frame::after {
+    display: none;
+  }
+
+  .app .player-wrap {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app .now {
+    min-height: 46px;
+    padding-inline: 16px;
+    border-block-end: 1px solid var(--line);
+  }
+
+  .app .now-title {
+    font-size: 14px;
+  }
+
+  .app .placeholder .eyebrow {
+    display: none;
+  }
+
+  .app .placeholder h2 {
+    margin-block-start: 0;
+  }
+
+  .app .placeholder p {
+    margin-block-start: 8px;
+    font-size: 13px;
+  }
+
+  .app .placeholder .btn {
+    margin-block-start: 16px;
+  }
+
+  .app .composer input {
+    height: 40px;
+  }
+
+  .app .composer-lead {
+    height: 40px;
+    width: 54px;
+  }
+
+  .app .composer-kbd {
+    display: none;
+  }
+
+  .app .composer-actions .btn {
+    height: 42px;
+    font-size: 14px;
+  }
+
+  .app .panel {
+    max-height: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .app .queue {
+    overflow: visible;
+  }
+
+  .app .queue-head {
+    padding-block: 4px 10px;
+  }
+
+  .app .queue-list {
+    margin-inline: -8px;
+    overflow: visible;
+  }
+
+  .app .qrow {
+    grid-template-columns: 30px 88px minmax(0, 1fr) 32px;
+    gap: 10px;
+  }
+
+  .app .qtext {
+    display: block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app .qthumb {
+    width: 88px;
+  }
+
+  .app .qdel {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app .empty {
+    padding-block: 20px 12px;
+    padding-inline: 24px;
+  }
+}

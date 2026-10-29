@@ -1,0 +1,199 @@
+.gate {
+  width: min(420px, calc(100vw - 32px));
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  filter: drop-shadow(0 2px 3px oklch(0 0 none / 0.12))
+    drop-shadow(0 30px 40px oklch(0 0 none / 0.28));
+  opacity: 0;
+  transition:
+    opacity 180ms var(--ease-out),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+
+.gate[open] {
+  opacity: 1;
+  transition-duration: 380ms;
+}
+
+@starting-style {
+  .gate[open] {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gate {
+    transform: translateY(8px) scale(0.97);
+    transition:
+      opacity 180ms var(--ease-out),
+      transform 180ms var(--ease-out),
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+  }
+
+  .gate[open] {
+    transform: none;
+    transition-duration: 380ms;
+  }
+
+  @starting-style {
+    .gate[open] {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+  }
+}
+
+/* no backdrop-filter: the stage keeps animating behind the gate, and Safari
+   would re-blur the whole viewport every frame */
+.gate::backdrop {
+  background: color-mix(in oklch, var(--scrim) 62%, transparent);
+  opacity: 0;
+  transition:
+    opacity 180ms var(--ease-out),
+    overlay 180ms allow-discrete,
+    display 180ms allow-discrete;
+}
+
+.gate[open]::backdrop {
+  opacity: 1;
+  transition-duration: 380ms;
+}
+
+@starting-style {
+  .gate[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.ticket {
+  --stub-h: 188px;
+  --notch: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  border-radius: 20px;
+  background: var(--surface);
+  -webkit-mask:
+    radial-gradient(
+        circle var(--notch) at 0 calc(100% - var(--stub-h)),
+        transparent 97%,
+        black
+      )
+      left / 51% 100% no-repeat,
+    radial-gradient(
+        circle var(--notch) at 100% calc(100% - var(--stub-h)),
+        transparent 97%,
+        black
+      )
+      right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(
+        circle var(--notch) at 0 calc(100% - var(--stub-h)),
+        transparent 97%,
+        black
+      )
+      left / 51% 100% no-repeat,
+    radial-gradient(
+        circle var(--notch) at 100% calc(100% - var(--stub-h)),
+        transparent 97%,
+        black
+      )
+      right / 51% 100% no-repeat;
+}
+
+.ticket-main {
+  padding-block: 22px 28px;
+  padding-inline: 28px;
+  background: radial-gradient(
+    120% 80% at 50% 0%,
+    color-mix(in oklch, var(--accent) 10%, transparent),
+    transparent 70%
+  );
+}
+
+.ticket-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-block-end: 26px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gate-title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.gate-title em {
+  color: var(--accent);
+}
+
+.gate-greeting {
+  margin-block-start: 12px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.ticket-stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: var(--stub-h);
+  padding-inline: 28px;
+  border-block-start: 2px dashed var(--line-strong);
+  background: var(--surface-2);
+}
+
+.gate-code {
+  display: flex;
+  gap: 6px;
+  margin-block-start: 10px;
+}
+
+.gate-code span {
+  display: grid;
+  width: 38px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gate-code span {
+    animation: tile-in 460ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 45ms + 140ms);
+  }
+}
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.gate-join {
+  margin-block-start: 18px;
+}

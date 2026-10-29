@@ -17,6 +17,19 @@ import type { ClientMsg, ServerMsg } from "./wire.ts"
 import { enqueue, moveTo, removeAt } from "../../../shared/queue.ts"
 import type { PlaybackState, Player, PlayerEvent } from "./player.ts"
 import type { Transport } from "./transport.ts"
+import {
+  DRIFT_LIMIT,
+  FOLLOW_GRACE_MS,
+  INDUCED_MS,
+  INDUCED_PLAY_MS,
+  LOAD_SUPPRESS_MS,
+  RESYNC_COOLDOWN_MS,
+  RESYNC_DRIFT,
+  SYNC_EVERY_MS,
+  SYNC_QUIET_MS,
+  TICK_MS,
+  USER_SEEK_JUMP,
+} from "./session-tuning.ts"
 
 export type Session = {
   start(): void
@@ -55,24 +68,6 @@ type SessionState = {
   isOwner: boolean
   kicked: boolean
 }
-
-const TICK_MS = 400
-const DRIFT_LIMIT = 1.2
-const USER_SEEK_JUMP = 1.5
-// how long a transition we caused stays marked as ours. A play runs
-// PAUSED → BUFFERING → PLAYING, well over a second on a cold iframe, so its
-// window has to outlast buffering; a seek or pause lands much sooner.
-const INDUCED_PLAY_MS = 2500
-const INDUCED_MS = 1200
-const LOAD_SUPPRESS_MS = 1500
-const RESYNC_DRIFT = 2
-const RESYNC_COOLDOWN_MS = 5000
-// after a remote play/pause, a player that hasn't followed yet (slow buffering,
-// blocked autoplay) is retried locally instead of echoed back as a user action
-const FOLLOW_GRACE_MS = 4000
-// safety-net resync; each sync_request wakes the hibernating DO, so not more often
-const SYNC_EVERY_MS = 20000
-const SYNC_QUIET_MS = 3000
 
 export function createSession(
   transport: Transport,
