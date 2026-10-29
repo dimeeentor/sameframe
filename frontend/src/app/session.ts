@@ -23,6 +23,7 @@ import {
   INDUCED_MS,
   INDUCED_PLAY_MS,
   LOAD_SUPPRESS_MS,
+  PAUSE_PENDING_MS,
   RESYNC_COOLDOWN_MS,
   RESYNC_DRIFT,
   SYNC_EVERY_MS,
@@ -98,6 +99,7 @@ export function createSession(
   // a load that should end up paused is muted-autoplaying; this holds the time
   // to pause and seek to once it actually starts playing
   let pausePending: number | null = null
+  let pausePendingUntil = 0
   let playerHost: HTMLElement | null = null
   let started = false
   let lastSyncAt = 0
@@ -219,6 +221,7 @@ export function createSession(
     } else {
       // stays muted until it is paused, so the brief autoplay is silent
       pausePending = at
+      pausePendingUntil = Date.now() + PAUSE_PENDING_MS
     }
   }
 
@@ -369,6 +372,9 @@ export function createSession(
   function tick() {
     if (!player.isReady()) return
     const now = Date.now()
+    // the muted autoplay never reported playing (blocked or errored): give up
+    // waiting so sound and drift correction come back
+    if (pausePending !== null && now > pausePendingUntil) cancelPendingPause()
     const t = player.currentTime()
     const st = player.state()
     if (s.videoId && s.joined && !priming && !isSuppressed()) {

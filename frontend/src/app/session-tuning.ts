@@ -7,6 +7,9 @@ export const USER_SEEK_JUMP = 1.5
 export const INDUCED_PLAY_MS = 2500
 export const INDUCED_MS = 1200
 export const LOAD_SUPPRESS_MS = 1500
+// how long a load waits for its muted autoplay to report playing before it
+// stops expecting one
+export const PAUSE_PENDING_MS = 4000
 export const RESYNC_DRIFT = 2
 export const RESYNC_COOLDOWN_MS = 5000
 // after a remote play/pause, a player that hasn't followed yet (slow buffering,

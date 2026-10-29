@@ -155,7 +155,7 @@ export function applyClientMsg(s: RoomState, msg: ClientCommand): Transition {
       const wasEmpty = s.queue.length === 0 && !s.videoId
       const added = enqueue(s, msg.videoId)
       if (added === s) return NOOP
-      // first video in an empty room: enqueueing it also starts it
+      // first video in an empty room: enqueueing it loads it, paused like a manual load
       if (!wasEmpty) {
         return {
           next: added,
