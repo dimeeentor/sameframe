@@ -126,16 +126,22 @@
 
   .app .queue-head {
     padding-block: 4px 10px;
+    padding-inline: 18px 16px;
   }
 
   .app .queue-list {
     margin-inline: -8px;
+    padding-block: 2px 8px;
+    padding-inline: 8px;
     overflow: visible;
   }
 
   .app .qrow {
     grid-template-columns: 30px 88px minmax(0, 1fr) 32px;
     gap: 10px;
+    padding-block: 8px;
+    padding-inline: 4px 8px;
+    border-radius: var(--radius-sm);
   }
 
   .app .qtext {
@@ -146,6 +152,7 @@
 
   .app .qthumb {
     width: 88px;
+    border-radius: var(--radius-xs);
   }
 
   .app .qdel {
