@@ -11,7 +11,7 @@
   align-items: baseline;
   gap: 10px;
   padding-block: 16px 10px;
-  padding-inline: 18px 16px;
+  padding-inline: 7px;
 }
 
 .queue-head h2 {
@@ -87,8 +87,8 @@
   flex-direction: column;
   gap: 2px;
   min-height: 0;
-  padding-block: 2px 8px;
-  padding-inline: 8px;
+  padding-block: 2px 0;
+  padding-inline: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   list-style: none;
@@ -100,9 +100,8 @@
   grid-template-columns: 26px 80px minmax(0, 1fr) 28px;
   align-items: center;
   gap: 12px;
-  padding-block: 8px;
-  padding-inline: 4px 8px;
-  border-radius: var(--radius-sm);
+  padding: 7px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition:
     background-color 150ms var(--ease-out),
@@ -169,7 +168,7 @@
   width: 80px;
   aspect-ratio: 16 / 9;
   overflow: clip;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   background: var(--screen);
 }
 
