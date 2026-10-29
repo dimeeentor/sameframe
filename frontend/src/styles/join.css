@@ -5,7 +5,7 @@ kbd {
   place-items: center;
   padding-inline: 5px;
   border: 1px solid var(--line-strong);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   color: var(--ink-2);
   background: var(--surface);
   box-shadow: 0 1px 0 var(--line-strong);
@@ -27,7 +27,7 @@ kbd {
   height: 48px;
   padding-inline-start: 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   transition:
     border-color 150ms var(--ease-out),
@@ -70,7 +70,7 @@ kbd {
   height: 40px;
   margin: 3px;
   place-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--ink);
   background: var(--surface-2);
 }

@@ -20,9 +20,9 @@
   position: absolute;
   inset: -9px;
   border: 1.5px solid var(--mark);
-  border-radius: 23px;
+  border-radius: calc(var(--radius-lg) + 9px);
   pointer-events: none;
-  --s: 20px;
+  --s: 26px;
   -webkit-mask: conic-gradient(at var(--s) var(--s), transparent 75%, black 0) 0
     0 / calc(100% - var(--s)) calc(100% - var(--s));
   mask: conic-gradient(at var(--s) var(--s), transparent 75%, black 0) 0 0 /
@@ -54,7 +54,7 @@
   aspect-ratio: 16 / 9;
   container-type: inline-size;
   overflow: clip;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--screen);
   box-shadow:
     0 0 0 1px var(--line),
