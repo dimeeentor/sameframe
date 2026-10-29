@@ -1,0 +1,98 @@
+kbd {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding-inline: 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  color: var(--ink-2);
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+.room-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.join-field {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding-inline-start: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  transition:
+    border-color 150ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+.join-field:focus-within {
+  border-color: color-mix(in oklch, var(--accent) 45%, var(--line));
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.join-field.error {
+  border-color: var(--hot);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--hot) 16%, transparent);
+}
+
+.join-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 2px solid transparent;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.join-input::placeholder {
+  color: var(--muted);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.join-go {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin: 3px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.join-go .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.btn::after,
+.icon-btn::after,
+.presence-btn::after,
+.qdel::after,
+.join-go::after,
+.hold-btn::after {
+  content: "";
+  position: absolute;
+  inset: min(0px, (100% - 44px) / 2);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .join-go:hover {
+    background: var(--surface-3);
+  }
+}
