@@ -1,7 +1,6 @@
 <script lang="ts">
 import { notFound, view } from "../state/session.svelte"
 import { layout } from "../state/media.svelte"
-import Icon from "./Icon.svelte"
 import CopyButton from "./CopyButton.svelte"
 import RoomTools from "./RoomTools.svelte"
 import Sheet from "./Sheet.svelte"
@@ -11,6 +10,9 @@ import { rise } from "./motion"
 
 let menuOpen = $state(false)
 let viewersOpen = $state(false)
+let menuTouched = $state(false)
+let menuBtn: HTMLButtonElement | undefined = $state()
+let viewersBtn: HTMLButtonElement | undefined = $state()
 
 const connText = $derived(
   view.connection === "open"
@@ -44,6 +46,7 @@ const connText = $derived(
   {#if !notFound.code}
   {#if view.isOwner}
     <button
+      bind:this={viewersBtn}
       class="presence presence-btn"
       type="button"
       data-conn={view.connection}
@@ -68,19 +71,23 @@ const connText = $derived(
       <CopyButton text={() => view.shareUrl} label="Invite" done="Link copied" title="Copy invite link" />
     {/if}
     <button
+      bind:this={menuBtn}
       class="icon-btn"
       type="button"
       aria-label="Room and settings"
       aria-expanded={menuOpen}
-      onclick={() => (menuOpen = true)}
+      onclick={() => ((menuOpen = true), (menuTouched = true))}
     >
-      <Icon name="menu" stroke={2} />
+      <svg class="burger" data-open={menuOpen} data-touched={menuTouched} viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <g class="lane a"><rect x="4" y="7" width="16" height="2" rx="1" /></g>
+        <g class="lane b"><rect x="4" y="15" width="16" height="2" rx="1" /></g>
+      </svg>
     </button>
   </div>
   {/if}
 </header>
 
-<Sheet open={menuOpen} onclose={() => (menuOpen = false)} label="Room and settings">
+<Sheet open={menuOpen} onclose={() => (menuOpen = false)} anchor={menuBtn} label="Room and settings">
   {#if layout.compact}
     <section class="sheet-section room-card">
       <span class="eyebrow">You're in room</span>
@@ -101,10 +108,60 @@ const connText = $derived(
 </Sheet>
 
 {#if view.isOwner}
-  <ViewersSheet open={viewersOpen} onclose={() => (viewersOpen = false)} />
+  <ViewersSheet open={viewersOpen} onclose={() => (viewersOpen = false)} anchor={viewersBtn} />
 {/if}
 
 <style>
+/* Lines trade places. Each lane carries the vertical travel (a transition, so it
+   retargets if toggled mid-flight); the rect carries a sideways bow and the
+   shortening, so the two lines pass on opposite sides instead of colliding. */
+.burger rect {
+  fill: currentColor;
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+}
+.lane {
+  transition: transform 340ms var(--ease-drawer);
+}
+.b {
+  transition-delay: 30ms;
+}
+.burger[data-open="true"] .a {
+  transform: translateY(8px);
+}
+.burger[data-open="true"] .b {
+  transform: translateY(-8px);
+}
+.b rect {
+  transition: scale 220ms var(--ease-out);
+}
+.burger[data-open="true"] .b rect {
+  scale: 0.56 1;
+}
+
+.burger[data-touched="true"] rect {
+  animation-duration: 340ms;
+  animation-timing-function: ease-in-out;
+}
+.burger[data-touched="true"][data-open="true"] .a rect { animation-name: bow-l; }
+.burger[data-touched="true"][data-open="false"] .a rect { animation-name: bow-l-back; }
+.burger[data-touched="true"][data-open="true"] .b rect { animation-name: bow-r; animation-delay: 30ms; }
+.burger[data-touched="true"][data-open="false"] .b rect { animation-name: bow-r-back; animation-delay: 30ms; }
+
+@keyframes bow-l { 50% { transform: translateX(-3px); } }
+@keyframes bow-l-back { 50% { transform: translateX(-3px); } }
+@keyframes bow-r { 50% { transform: translateX(3px); } }
+@keyframes bow-r-back { 50% { transform: translateX(3px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lane,
+  .b rect {
+    transition-duration: 0s;
+  }
+  .burger rect {
+    animation: none !important;
+  }
+}
 .presence-btn {
   position: relative;
   font: inherit;

@@ -121,6 +121,34 @@
   }
 }
 
+/* Desktop popover: no dim, anchored under the trigger. The scrim stays as an
+   invisible click-catcher for outside-click dismissal. */
+@media (min-width: 640px) {
+  .sheet-root.anchored .sheet-scrim {
+    background: none;
+  }
+
+  .sheet-root.anchored .sheet {
+    inset: auto;
+    inset-block-start: var(--sheet-top);
+    inset-inline-start: var(--sheet-left);
+    inset-inline-end: var(--sheet-right);
+    width: 328px;
+    margin: 0;
+    transform-origin: var(--sheet-origin);
+  }
+}
+
+@media (min-width: 640px) and (prefers-reduced-motion: no-preference) {
+  .sheet-root.anchored .sheet {
+    transform: scale(0.96) translateY(-4px);
+  }
+
+  .sheet-root.anchored.open .sheet {
+    transform: none;
+  }
+}
+
 .sheet-section {
   display: flex;
   flex-direction: column;

@@ -1,8 +1,8 @@
 <script lang="ts">
 import { tick, type Snippet } from "svelte"
 
-type Props = { open: boolean; onclose: () => void; label: string; children: Snippet }
-let { open, onclose, label, children }: Props = $props()
+type Props = { open: boolean; onclose: () => void; label: string; children: Snippet; anchor?: HTMLElement }
+let { open, onclose, label, children, anchor }: Props = $props()
 
 let dialog: HTMLDialogElement | undefined = $state()
 let panel: HTMLDivElement | undefined = $state()
@@ -53,6 +53,15 @@ $effect(() => {
   if (!dialog) return
   if (open) {
     if (!dialog.open) dialog.showModal()
+    if (anchor && panel) {
+      // desktop popover: hang from the trigger, on whichever side has room
+      const r = anchor.getBoundingClientRect()
+      const left = r.left + r.width / 2 < document.documentElement.clientWidth / 2
+      panel.style.setProperty("--sheet-top", `${r.bottom + 8}px`)
+      panel.style.setProperty("--sheet-left", left ? `${r.left}px` : "auto")
+      panel.style.setProperty("--sheet-right", left ? "auto" : `${document.documentElement.clientWidth - r.right}px`)
+      panel.style.setProperty("--sheet-origin", left ? "top left" : "top right")
+    }
     dialog.getBoundingClientRect()
     shown = true
     tick().then(() => {
@@ -77,7 +86,7 @@ function onnativeclose() {
 </script>
 
 <dialog
-  class={["sheet-root", { open: shown }]}
+  class={["sheet-root", { open: shown, anchored: !!anchor }]}
   bind:this={dialog}
   aria-label={label}
   {oncancel}

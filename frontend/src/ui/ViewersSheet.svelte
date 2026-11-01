@@ -3,10 +3,10 @@ import { session, view } from "../state/session.svelte"
 import CopyButton from "./CopyButton.svelte"
 import Sheet from "./Sheet.svelte"
 
-let { open, onclose }: { open: boolean; onclose: () => void } = $props()
+let { open, onclose, anchor }: { open: boolean; onclose: () => void; anchor?: HTMLElement } = $props()
 </script>
 
-<Sheet {open} {onclose} label="Viewers">
+<Sheet {open} {onclose} {anchor} label="Viewers">
   <section class="sheet-section">
     <span class="eyebrow">Watching</span>
     <ul class="viewers">
