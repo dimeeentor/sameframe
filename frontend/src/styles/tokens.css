@@ -15,6 +15,10 @@
   --chroma: 0.2;
   --accent-l: 0.54;
   --tint-k: 1.4;
+  /* Dark-mode accent lightness; mono lifts it to near-white. */
+  --accent-dl: 0.74;
+  /* 1 keeps the fixed tints below (screen, scrim, shadows); mono sets 0 for pure greys. */
+  --tinted: 1;
   /* Page background, set per palette so no two share one: light then dark lightness and chroma. */
   --bg-l: 0.961;
   --bg-c: 0.018;
@@ -55,7 +59,7 @@
     oklch(0.962 calc(0.02 * var(--tint-k)) var(--tint) / 0.17)
   );
 
-  --accent: light-dark(oklch(var(--accent-l) var(--chroma) var(--hue)), oklch(0.74 calc(var(--chroma) * 0.825) var(--hue)));
+  --accent: light-dark(oklch(var(--accent-l) var(--chroma) var(--hue)), oklch(var(--accent-dl) calc(var(--chroma) * 0.825) var(--hue)));
   --accent-hover: light-dark(
     color-mix(in oklch, var(--accent), black 8%),
     color-mix(in oklch, var(--accent), white 14%)
@@ -69,23 +73,23 @@
   --warm: light-dark(oklch(0.699 0.152 69.6), oklch(0.813 0.145 78));
 
   /* cinema surfaces: fixed in both themes */
-  --screen: oklch(0.123 0.005 var(--tint));
-  --screen-ink: oklch(0.951 0.01 var(--tint));
-  --screen-flare: oklch(0.953 0.03 var(--tint));
-  --screen-accent: oklch(0.74 calc(var(--chroma) * 0.825) var(--hue));
-  --screen-accent-ink: oklch(0.162 0.036 var(--hue));
-  --scrim: oklch(0.131 0.012 var(--tint));
+  --screen: oklch(0.123 calc(0.005 * var(--tinted)) var(--tint));
+  --screen-ink: oklch(0.951 calc(0.01 * var(--tinted)) var(--tint));
+  --screen-flare: oklch(0.953 calc(0.03 * var(--tinted)) var(--tint));
+  --screen-accent: oklch(var(--accent-dl) calc(var(--chroma) * 0.825) var(--hue));
+  --screen-accent-ink: oklch(0.162 calc(0.036 * var(--tinted)) var(--hue));
+  --scrim: oklch(0.131 calc(0.012 * var(--tinted)) var(--tint));
 
   --ring: color-mix(in oklch, var(--accent) 22%, transparent);
   --shadow-sm:
-    0 1px 2px oklch(0.229 0.035 var(--tint) / 0.06),
-    0 0 0 1px oklch(0.229 0.035 var(--tint) / 0.02);
+    0 1px 2px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.06),
+    0 0 0 1px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.02);
   --shadow-md:
-    0 2px 4px oklch(0.229 0.035 var(--tint) / 0.04),
-    0 10px 24px -8px oklch(0.229 0.035 var(--tint) / 0.14);
+    0 2px 4px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.04),
+    0 10px 24px -8px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.14);
   --shadow-lg:
-    0 4px 8px oklch(0.229 0.035 var(--tint) / 0.05),
-    0 30px 60px -20px oklch(0.229 0.035 var(--tint) / 0.28);
+    0 4px 8px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.05),
+    0 30px 60px -20px oklch(0.229 calc(0.035 * var(--tinted)) var(--tint) / 0.28);
 
   --grain-opacity: 0.09;
   --glow-opacity: 0.5;

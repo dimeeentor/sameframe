@@ -41,6 +41,7 @@ export type Palette =
   | "silver"
   | "parchment"
   | "terracotta"
+  | "mono"
 
 /** Order and labels for the picker. Colours live in styles/palettes.css. */
 export const PALETTES: readonly { id: Palette; label: string }[] = [
@@ -59,6 +60,7 @@ export const PALETTES: readonly { id: Palette; label: string }[] = [
   { id: "silver", label: "Silver Point Light" },
   { id: "parchment", label: "Sunlit Parchment" },
   { id: "terracotta", label: "Terracotta Noon" },
+  { id: "mono", label: "Mono" },
 ]
 
 const PALETTE_KEY = "sameframe-palette"

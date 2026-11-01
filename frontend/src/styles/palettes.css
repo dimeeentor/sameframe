@@ -183,6 +183,21 @@
   --accent-l: 0.5;
 }
 
+/* No colour: pure greys, near-black accent in light and near-white in dark. */
+[data-palette="mono"] {
+  --hue: 0;
+  --tint: 0;
+  --chroma: 0;
+  --tint-k: 0;
+  --tinted: 0;
+  --bg-l: 0.955;
+  --bg-c: 0;
+  --bg-dl: 0.165;
+  --bg-dc: 0;
+  --accent-l: 0.27;
+  --accent-dl: 0.92;
+}
+
 /* Picker swatches resolve their colours from their own palette; the :root
  * tokens are computed once and would not follow. Left half is the page, right
  * half the accent. */
@@ -193,7 +208,7 @@
   );
   --swatch-accent: light-dark(
     oklch(var(--accent-l) var(--chroma) var(--hue)),
-    oklch(0.74 calc(var(--chroma) * 0.825) var(--hue))
+    oklch(var(--accent-dl) calc(var(--chroma) * 0.825) var(--hue))
   );
   background: linear-gradient(
     90deg,
