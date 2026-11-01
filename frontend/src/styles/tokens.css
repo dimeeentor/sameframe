@@ -13,8 +13,13 @@
   --hue: 5;
   --tint: 10;
   --chroma: 0.2;
-  --accent-l: 0.55;
-  --tint-k: 1;
+  --accent-l: 0.54;
+  --tint-k: 1.4;
+  /* Page background, set per palette so no two share one: light then dark lightness and chroma. */
+  --bg-l: 0.961;
+  --bg-c: 0.018;
+  --bg-dl: 0.161;
+  --bg-dc: 0.021;
 
   --font-sans:
     "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
@@ -34,7 +39,7 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --bg: light-dark(oklch(0.948 calc(0.008 * var(--tint-k)) var(--tint)), oklch(0.15 calc(0.004 * var(--tint-k)) var(--tint)));
+  --bg: light-dark(oklch(var(--bg-l) var(--bg-c) var(--tint)), oklch(var(--bg-dl) var(--bg-dc) var(--tint)));
   --surface: light-dark(oklch(0.988 calc(0.004 * var(--tint-k)) var(--tint)), oklch(0.2 calc(0.006 * var(--tint-k)) var(--tint)));
   --surface-2: light-dark(oklch(0.925 calc(0.01 * var(--tint-k)) var(--tint)), oklch(0.238 calc(0.008 * var(--tint-k)) var(--tint)));
   --surface-3: light-dark(oklch(0.885 calc(0.013 * var(--tint-k)) var(--tint)), oklch(0.285 calc(0.01 * var(--tint-k)) var(--tint)));

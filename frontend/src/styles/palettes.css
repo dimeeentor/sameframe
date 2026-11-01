@@ -1,5 +1,5 @@
 /* Client-selectable palettes. Each sets the accent hue, the neutrals' tint and
- * the accent chroma and --tint-k (how strongly the neutrals are tinted); tokens.css derives everything else. Raspberry is the
+ * the accent chroma, --tint-k (how strongly the neutrals are tinted) and its own page background (--bg-*); tokens.css derives everything else. Raspberry is the
  * default, set in :root. Keep in sync with PALETTES in settings.svelte.ts. */
 /* Same values as :root. Without this the raspberry swatch inherits whichever
  * palette is active instead of showing raspberry. */
@@ -7,108 +7,179 @@
   --hue: 5;
   --tint: 10;
   --chroma: 0.2;
-  --tint-k: 1;
+  --tint-k: 1.4;
+  --bg-l: 0.961;
+  --bg-c: 0.018;
+  --bg-dl: 0.161;
+  --bg-dc: 0.021;
+  --accent-l: 0.54;
 }
 
 [data-palette="merino"] {
   --hue: 55;
   --tint: 70;
   --chroma: 0.08;
-  --tint-k: 1.6;
+  --tint-k: 1.2;
+  --bg-l: 0.969;
+  --bg-c: 0.017;
+  --bg-dl: 0.125;
+  --bg-dc: 0.018;
+  --accent-l: 0.54;
 }
 
 [data-palette="alpine"] {
   --hue: 245;
   --tint: 240;
   --chroma: 0.14;
-  --tint-k: 0.9;
+  --tint-k: 0.68;
+  --bg-l: 0.945;
+  --bg-c: 0.022;
+  --bg-dl: 0.148;
+  --bg-dc: 0.024;
+  --accent-l: 0.5;
 }
 
 [data-palette="buttercream"] {
   --hue: 25;
-  --tint: 85;
+  --tint: 90;
   --chroma: 0.19;
-  --tint-k: 2.6;
+  --tint-k: 1.95;
+  --bg-l: 0.957;
+  --bg-c: 0.035;
+  --bg-dl: 0.159;
+  --bg-dc: 0.033;
+  --accent-l: 0.53;
 }
 
 [data-palette="coastal"] {
   --hue: 215;
   --tint: 215;
   --chroma: 0.1;
-  --tint-k: 2.2;
-  --accent-l: 0.52;
+  --tint-k: 1.65;
+  --bg-l: 0.957;
+  --bg-c: 0.027;
+  --bg-dl: 0.181;
+  --bg-dc: 0.026;
+  --accent-l: 0.51;
 }
 
 [data-palette="glacier"] {
   --hue: 185;
   --tint: 180;
   --chroma: 0.11;
-  --tint-k: 2.6;
-  --accent-l: 0.52;
+  --tint-k: 1.95;
+  --bg-l: 0.948;
+  --bg-c: 0.017;
+  --bg-dl: 0.16;
+  --bg-dc: 0.027;
+  --accent-l: 0.51;
 }
 
 [data-palette="ivory"] {
   --hue: 95;
-  --tint: 95;
+  --tint: 100;
   --chroma: 0.03;
-  --tint-k: 1.5;
+  --tint-k: 1.12;
+  --bg-l: 0.949;
+  --bg-c: 0.013;
+  --bg-dl: 0.18;
+  --bg-dc: 0.013;
+  --accent-l: 0.52;
 }
 
 [data-palette="lavender"] {
   --hue: 295;
   --tint: 295;
   --chroma: 0.15;
-  --tint-k: 3.2;
+  --tint-k: 2.4;
+  --bg-l: 0.96;
+  --bg-c: 0.024;
+  --bg-dl: 0.154;
+  --bg-dc: 0.034;
+  --accent-l: 0.54;
 }
 
 [data-palette="newsprint"] {
   --hue: 255;
   --tint: 100;
   --chroma: 0.1;
-  --tint-k: 1.0;
+  --tint-k: 0.75;
+  --bg-l: 0.963;
+  --bg-c: 0.002;
+  --bg-dl: 0.146;
+  --bg-dc: 0.006;
+  --accent-l: 0.54;
 }
 
 [data-palette="orchard"] {
   --hue: 140;
   --tint: 135;
   --chroma: 0.14;
-  --tint-k: 3.2;
+  --tint-k: 2.4;
+  --bg-l: 0.97;
+  --bg-c: 0.031;
+  --bg-dl: 0.127;
+  --bg-dc: 0.029;
   --accent-l: 0.52;
 }
 
 [data-palette="peach"] {
   --hue: 52;
-  --tint: 55;
+  --tint: 60;
   --chroma: 0.15;
-  --tint-k: 3.6;
+  --tint-k: 2.7;
+  --bg-l: 0.953;
+  --bg-c: 0.03;
+  --bg-dl: 0.144;
+  --bg-dc: 0.038;
+  --accent-l: 0.53;
 }
 
 [data-palette="porcelain"] {
   --hue: 270;
   --tint: 230;
   --chroma: 0.17;
-  --tint-k: 1.5;
+  --tint-k: 1.12;
+  --bg-l: 0.967;
+  --bg-c: 0.014;
+  --bg-dl: 0.126;
+  --bg-dc: 0.011;
+  --accent-l: 0.54;
 }
 
 [data-palette="silver"] {
   --hue: 250;
   --tint: 260;
   --chroma: 0.05;
-  --tint-k: 0.3;
+  --tint-k: 0.22;
+  --bg-l: 0.949;
+  --bg-c: 0.007;
+  --bg-dl: 0.167;
+  --bg-dc: 0.007;
+  --accent-l: 0.52;
 }
 
 [data-palette="parchment"] {
   --hue: 78;
-  --tint: 70;
+  --tint: 80;
   --chroma: 0.13;
-  --tint-k: 3.4;
+  --tint-k: 2.55;
+  --bg-l: 0.978;
+  --bg-c: 0.035;
+  --bg-dl: 0.185;
+  --bg-dc: 0.037;
+  --accent-l: 0.54;
 }
 
 [data-palette="terracotta"] {
   --hue: 30;
-  --tint: 38;
+  --tint: 30;
   --chroma: 0.14;
-  --tint-k: 3.6;
+  --tint-k: 2.7;
+  --bg-l: 0.944;
+  --bg-c: 0.021;
+  --bg-dl: 0.185;
+  --bg-dc: 0.038;
   --accent-l: 0.5;
 }
 
@@ -117,8 +188,8 @@
  * half the accent. */
 .palette-swatch {
   --swatch-page: light-dark(
-    oklch(0.948 calc(0.008 * var(--tint-k)) var(--tint)),
-    oklch(0.15 calc(0.004 * var(--tint-k)) var(--tint))
+    oklch(var(--bg-l) var(--bg-c) var(--tint)),
+    oklch(var(--bg-dl) var(--bg-dc) var(--tint))
   );
   --swatch-accent: light-dark(
     oklch(var(--accent-l) var(--chroma) var(--hue)),
