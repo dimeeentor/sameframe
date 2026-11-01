@@ -5,6 +5,7 @@ import CopyButton from "./CopyButton.svelte"
 import RoomTools from "./RoomTools.svelte"
 import Sheet from "./Sheet.svelte"
 import ViewersSheet from "./ViewersSheet.svelte"
+import PaletteSwitch from "./PaletteSwitch.svelte"
 import ThemeSwitch from "./ThemeSwitch.svelte"
 import { rise } from "./motion"
 
@@ -99,6 +100,7 @@ const connText = $derived(
   <section class="sheet-section">
     <span class="eyebrow">Appearance</span>
     <ThemeSwitch />
+    <PaletteSwitch />
   </section>
 
   <section class="sheet-section">

@@ -22,6 +22,8 @@
               ? "light"
               : "dark"
         document.documentElement.dataset.theme = theme
+        document.documentElement.dataset.palette =
+          localStorage.getItem("sameframe-palette") || "raspberry"
       }
     </script>
   </head>

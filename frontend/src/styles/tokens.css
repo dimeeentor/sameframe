@@ -9,6 +9,13 @@
 :root {
   color-scheme: light dark;
 
+  /* Palette: --hue is the accent, --tint the neutrals' undertone, --tint-k how strongly they carry it. See palettes.css. */
+  --hue: 5;
+  --tint: 10;
+  --chroma: 0.2;
+  --accent-l: 0.55;
+  --tint-k: 1;
+
   --font-sans:
     "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
     sans-serif;
@@ -27,23 +34,23 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  --bg: light-dark(oklch(0.948 0.008 10), oklch(0.15 0.004 10));
-  --surface: light-dark(oklch(0.988 0.004 10), oklch(0.2 0.006 10));
-  --surface-2: light-dark(oklch(0.925 0.01 10), oklch(0.238 0.008 10));
-  --surface-3: light-dark(oklch(0.885 0.013 10), oklch(0.285 0.01 10));
-  --ink: light-dark(oklch(0.2 0.008 10), oklch(0.96 0.008 10));
-  --ink-2: light-dark(oklch(0.36 0.014 10), oklch(0.83 0.014 10));
-  --muted: light-dark(oklch(0.5 0.017 10), oklch(0.66 0.017 10));
+  --bg: light-dark(oklch(0.948 calc(0.008 * var(--tint-k)) var(--tint)), oklch(0.15 calc(0.004 * var(--tint-k)) var(--tint)));
+  --surface: light-dark(oklch(0.988 calc(0.004 * var(--tint-k)) var(--tint)), oklch(0.2 calc(0.006 * var(--tint-k)) var(--tint)));
+  --surface-2: light-dark(oklch(0.925 calc(0.01 * var(--tint-k)) var(--tint)), oklch(0.238 calc(0.008 * var(--tint-k)) var(--tint)));
+  --surface-3: light-dark(oklch(0.885 calc(0.013 * var(--tint-k)) var(--tint)), oklch(0.285 calc(0.01 * var(--tint-k)) var(--tint)));
+  --ink: light-dark(oklch(0.2 calc(0.008 * var(--tint-k)) var(--tint)), oklch(0.96 calc(0.008 * var(--tint-k)) var(--tint)));
+  --ink-2: light-dark(oklch(0.36 calc(0.014 * var(--tint-k)) var(--tint)), oklch(0.83 calc(0.014 * var(--tint-k)) var(--tint)));
+  --muted: light-dark(oklch(0.5 calc(0.017 * var(--tint-k)) var(--tint)), oklch(0.66 calc(0.017 * var(--tint-k)) var(--tint)));
   --line: light-dark(
-    oklch(0.296 0.04 10 / 0.12),
-    oklch(0.962 0.02 10 / 0.09)
+    oklch(0.296 calc(0.04 * var(--tint-k)) var(--tint) / 0.12),
+    oklch(0.962 calc(0.02 * var(--tint-k)) var(--tint) / 0.09)
   );
   --line-strong: light-dark(
-    oklch(0.296 0.04 10 / 0.22),
-    oklch(0.962 0.02 10 / 0.17)
+    oklch(0.296 calc(0.04 * var(--tint-k)) var(--tint) / 0.22),
+    oklch(0.962 calc(0.02 * var(--tint-k)) var(--tint) / 0.17)
   );
 
-  --accent: light-dark(oklch(0.55 0.2 5), oklch(0.74 0.165 5));
+  --accent: light-dark(oklch(var(--accent-l) var(--chroma) var(--hue)), oklch(0.74 calc(var(--chroma) * 0.825) var(--hue)));
   --accent-hover: light-dark(
     color-mix(in oklch, var(--accent), black 8%),
     color-mix(in oklch, var(--accent), white 14%)
@@ -57,23 +64,23 @@
   --warm: light-dark(oklch(0.699 0.152 69.6), oklch(0.813 0.145 78));
 
   /* cinema surfaces: fixed in both themes */
-  --screen: oklch(0.123 0.005 10);
-  --screen-ink: oklch(0.951 0.01 10);
-  --screen-flare: oklch(0.953 0.03 10);
-  --screen-accent: oklch(0.74 0.165 5);
-  --screen-accent-ink: oklch(0.162 0.036 5);
-  --scrim: oklch(0.131 0.012 10);
+  --screen: oklch(0.123 0.005 var(--tint));
+  --screen-ink: oklch(0.951 0.01 var(--tint));
+  --screen-flare: oklch(0.953 0.03 var(--tint));
+  --screen-accent: oklch(0.74 calc(var(--chroma) * 0.825) var(--hue));
+  --screen-accent-ink: oklch(0.162 0.036 var(--hue));
+  --scrim: oklch(0.131 0.012 var(--tint));
 
   --ring: color-mix(in oklch, var(--accent) 22%, transparent);
   --shadow-sm:
-    0 1px 2px oklch(0.229 0.035 10 / 0.06),
-    0 0 0 1px oklch(0.229 0.035 10 / 0.02);
+    0 1px 2px oklch(0.229 0.035 var(--tint) / 0.06),
+    0 0 0 1px oklch(0.229 0.035 var(--tint) / 0.02);
   --shadow-md:
-    0 2px 4px oklch(0.229 0.035 10 / 0.04),
-    0 10px 24px -8px oklch(0.229 0.035 10 / 0.14);
+    0 2px 4px oklch(0.229 0.035 var(--tint) / 0.04),
+    0 10px 24px -8px oklch(0.229 0.035 var(--tint) / 0.14);
   --shadow-lg:
-    0 4px 8px oklch(0.229 0.035 10 / 0.05),
-    0 30px 60px -20px oklch(0.229 0.035 10 / 0.28);
+    0 4px 8px oklch(0.229 0.035 var(--tint) / 0.05),
+    0 30px 60px -20px oklch(0.229 0.035 var(--tint) / 0.28);
 
   --grain-opacity: 0.09;
   --glow-opacity: 0.5;

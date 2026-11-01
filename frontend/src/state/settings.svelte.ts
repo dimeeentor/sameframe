@@ -25,10 +25,58 @@ function readMode(): ThemeMode | null {
   }
 }
 
+export type Palette =
+  | "raspberry"
+  | "merino"
+  | "alpine"
+  | "buttercream"
+  | "coastal"
+  | "glacier"
+  | "ivory"
+  | "lavender"
+  | "newsprint"
+  | "orchard"
+  | "peach"
+  | "porcelain"
+  | "silver"
+  | "parchment"
+  | "terracotta"
+
+/** Order and labels for the picker. Colours live in styles/palettes.css. */
+export const PALETTES: readonly { id: Palette; label: string }[] = [
+  { id: "raspberry", label: "Raspberry" },
+  { id: "merino", label: "Merino Light" },
+  { id: "alpine", label: "Alpine Milk" },
+  { id: "buttercream", label: "Buttercream Diner" },
+  { id: "coastal", label: "Coastal Linen" },
+  { id: "glacier", label: "Glacier Mint" },
+  { id: "ivory", label: "Ivory Gallery" },
+  { id: "lavender", label: "Lavender Postcard" },
+  { id: "newsprint", label: "Newsprint Fog" },
+  { id: "orchard", label: "Orchard Breeze" },
+  { id: "peach", label: "Peach Veranda" },
+  { id: "porcelain", label: "Porcelain Morning" },
+  { id: "silver", label: "Silver Point Light" },
+  { id: "parchment", label: "Sunlit Parchment" },
+  { id: "terracotta", label: "Terracotta Noon" },
+]
+
+const PALETTE_KEY = "sameframe-palette"
+
+function readPalette(): Palette {
+  try {
+    const v = localStorage.getItem(PALETTE_KEY)
+    return PALETTES.find((p) => p.id === v)?.id ?? "raspberry"
+  } catch {
+    return "raspberry"
+  }
+}
+
 const prefersLight = new MediaQuery("prefers-color-scheme: light")
 
 class Settings {
   themeMode = $state<ThemeMode>(readMode() ?? "system")
+  palette = $state<Palette>(readPalette())
   /** The theme actually painted. */
   theme = $derived<Theme>(
     this.themeMode === "system"
@@ -45,12 +93,22 @@ $effect.root(() => {
   $effect(() => {
     document.documentElement.setAttribute("data-theme", settings.theme)
   })
+  $effect(() => {
+    document.documentElement.setAttribute("data-palette", settings.palette)
+  })
 })
 
 export function setThemeMode(mode: ThemeMode) {
   settings.themeMode = mode
   try {
     localStorage.setItem(THEME_KEY, mode)
+  } catch {}
+}
+
+export function setPalette(palette: Palette) {
+  settings.palette = palette
+  try {
+    localStorage.setItem(PALETTE_KEY, palette)
   } catch {}
 }
 

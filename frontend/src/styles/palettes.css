@@ -1,0 +1,132 @@
+/* Client-selectable palettes. Each sets the accent hue, the neutrals' tint and
+ * the accent chroma and --tint-k (how strongly the neutrals are tinted); tokens.css derives everything else. Raspberry is the
+ * default, set in :root. Keep in sync with PALETTES in settings.svelte.ts. */
+/* Same values as :root. Without this the raspberry swatch inherits whichever
+ * palette is active instead of showing raspberry. */
+[data-palette="raspberry"] {
+  --hue: 5;
+  --tint: 10;
+  --chroma: 0.2;
+  --tint-k: 1;
+}
+
+[data-palette="merino"] {
+  --hue: 55;
+  --tint: 70;
+  --chroma: 0.08;
+  --tint-k: 1.6;
+}
+
+[data-palette="alpine"] {
+  --hue: 245;
+  --tint: 240;
+  --chroma: 0.14;
+  --tint-k: 0.9;
+}
+
+[data-palette="buttercream"] {
+  --hue: 25;
+  --tint: 85;
+  --chroma: 0.19;
+  --tint-k: 2.6;
+}
+
+[data-palette="coastal"] {
+  --hue: 215;
+  --tint: 215;
+  --chroma: 0.1;
+  --tint-k: 2.2;
+  --accent-l: 0.52;
+}
+
+[data-palette="glacier"] {
+  --hue: 185;
+  --tint: 180;
+  --chroma: 0.11;
+  --tint-k: 2.6;
+  --accent-l: 0.52;
+}
+
+[data-palette="ivory"] {
+  --hue: 95;
+  --tint: 95;
+  --chroma: 0.03;
+  --tint-k: 1.5;
+}
+
+[data-palette="lavender"] {
+  --hue: 295;
+  --tint: 295;
+  --chroma: 0.15;
+  --tint-k: 3.2;
+}
+
+[data-palette="newsprint"] {
+  --hue: 255;
+  --tint: 100;
+  --chroma: 0.1;
+  --tint-k: 1.0;
+}
+
+[data-palette="orchard"] {
+  --hue: 140;
+  --tint: 135;
+  --chroma: 0.14;
+  --tint-k: 3.2;
+  --accent-l: 0.52;
+}
+
+[data-palette="peach"] {
+  --hue: 52;
+  --tint: 55;
+  --chroma: 0.15;
+  --tint-k: 3.6;
+}
+
+[data-palette="porcelain"] {
+  --hue: 270;
+  --tint: 230;
+  --chroma: 0.17;
+  --tint-k: 1.5;
+}
+
+[data-palette="silver"] {
+  --hue: 250;
+  --tint: 260;
+  --chroma: 0.05;
+  --tint-k: 0.3;
+}
+
+[data-palette="parchment"] {
+  --hue: 78;
+  --tint: 70;
+  --chroma: 0.13;
+  --tint-k: 3.4;
+}
+
+[data-palette="terracotta"] {
+  --hue: 30;
+  --tint: 38;
+  --chroma: 0.14;
+  --tint-k: 3.6;
+  --accent-l: 0.5;
+}
+
+/* Picker swatches resolve their colours from their own palette; the :root
+ * tokens are computed once and would not follow. Left half is the page, right
+ * half the accent. */
+.palette-swatch {
+  --swatch-page: light-dark(
+    oklch(0.948 calc(0.008 * var(--tint-k)) var(--tint)),
+    oklch(0.15 calc(0.004 * var(--tint-k)) var(--tint))
+  );
+  --swatch-accent: light-dark(
+    oklch(var(--accent-l) var(--chroma) var(--hue)),
+    oklch(0.74 calc(var(--chroma) * 0.825) var(--hue))
+  );
+  background: linear-gradient(
+    90deg,
+    var(--swatch-page) 50%,
+    var(--swatch-accent) 50%
+  );
+}

@@ -237,3 +237,122 @@
   filter: blur(3px);
   transform: scale(0.92);
 }
+
+.palette-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 550;
+  list-style: none;
+  cursor: pointer;
+}
+
+.palette-summary::-webkit-details-marker {
+  display: none;
+}
+
+.palette-name {
+  flex: 1;
+}
+
+.palette-summary .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.palette-summary:active {
+  background: var(--surface-3);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .palette-summary .icon {
+    transition: transform 200ms var(--ease-out);
+  }
+}
+
+.palette[open] .palette-summary .icon {
+  transform: rotate(180deg);
+}
+
+/* Height and opacity ease together; `overflow: clip` would cut the focus rings,
+ * so the grid carries padding for them. Browsers without interpolate-size just
+ * open instantly. */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+.palette::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+}
+
+.palette[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .palette::details-content {
+    transition:
+      block-size 200ms var(--ease-out),
+      opacity 160ms var(--ease-out),
+      content-visibility 200ms allow-discrete;
+  }
+}
+
+.palette-switch {
+  padding: 8px 4px 4px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.palette-btn {
+  display: grid;
+  height: 44px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 150ms var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .palette-btn {
+    transition:
+      transform 160ms var(--ease-out),
+      border-color 150ms var(--ease-out);
+  }
+}
+
+.palette-btn:active {
+  transform: scale(0.95);
+}
+
+.palette-btn[aria-pressed="true"] {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.palette-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px oklch(0 0 none / 0.12);
+}
+
+.palette-btn[aria-pressed="true"] .palette-swatch {
+  box-shadow:
+    inset 0 0 0 1px oklch(0 0 none / 0.12),
+    0 0 0 2px var(--surface-2),
+    0 0 0 4px var(--swatch-accent);
+}
