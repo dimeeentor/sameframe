@@ -152,7 +152,6 @@ function startDrag(e: PointerEvent) {
   </button>
 
   <div class="qtitle">
-    {#if active}<span class="qnow">Now showing</span>{/if}
     <span class="qtext">{titleOf(id)}</span>
   </div>
 

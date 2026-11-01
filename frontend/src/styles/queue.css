@@ -196,17 +196,6 @@
   min-width: 0;
 }
 
-.qnow {
-  display: block;
-  margin-block-end: 3px;
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .qtext {
   display: -webkit-box;
   overflow: clip;
