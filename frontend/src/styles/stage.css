@@ -231,10 +231,12 @@
 }
 
 .resume-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 10px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  width: fit-content;
+  margin-inline: auto;
 }
 
 .placeholder .btn.subtle {
