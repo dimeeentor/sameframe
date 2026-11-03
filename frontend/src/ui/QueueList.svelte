@@ -21,7 +21,6 @@ function onFillEnd(e: TransitionEvent) {
   <div class="queue-head">
     <h2 id="queue-heading">Up next</h2>
     {#if view.queue.length}
-      <span class="queue-count">{String(view.queue.length).padStart(2, "0")}</span>
       <button
         class={["hold-btn", { holding }]}
         type="button"
