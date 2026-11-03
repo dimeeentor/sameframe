@@ -1,5 +1,6 @@
 <script lang="ts">
 import { PALETTES, setPalette, settings } from "../state/settings.svelte"
+import CustomTheme from "./CustomTheme.svelte"
 import Icon from "./Icon.svelte"
 
 const current = $derived(PALETTES.find((p) => p.id === settings.palette))
@@ -26,4 +27,7 @@ const current = $derived(PALETTES.find((p) => p.id === settings.palette))
       </button>
     {/each}
   </div>
+  {#if settings.palette === "custom"}
+    <CustomTheme />
+  {/if}
 </details>

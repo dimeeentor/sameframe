@@ -356,3 +356,299 @@
     0 0 0 2px var(--surface-2),
     0 0 0 4px var(--swatch-accent);
 }
+
+.palette-custom {
+  display: grid;
+  gap: 12px;
+  padding: 8px 8px 6px;
+}
+
+.palette-slider {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.palette-slider input {
+  appearance: none;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px light-dark(oklch(0 0 none / 0.12), oklch(1 0 none / 0.28));
+  background: var(--track);
+  cursor: pointer;
+}
+
+/* Same vivid stops as the custom swatch; the real accent stays darker in light mode so white button text keeps contrast. */
+.hue-range {
+  --track: linear-gradient(
+    90deg in oklch,
+    oklch(0.72 0.16 0),
+    oklch(0.72 0.16 60),
+    oklch(0.72 0.16 120),
+    oklch(0.72 0.16 180),
+    oklch(0.72 0.16 240),
+    oklch(0.72 0.16 300),
+    oklch(0.72 0.16 360)
+  );
+}
+
+.palette-slider input::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: 0 0 0 3px white, 0 0 0 4px oklch(0 0 none / 0.25), var(--shadow-sm);
+}
+
+.palette-slider input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: 0 0 0 3px white, 0 0 0 4px oklch(0 0 none / 0.25), var(--shadow-sm);
+}
+
+.custom-group {
+  display: grid;
+  gap: 6px;
+}
+
+.custom-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.custom-picked {
+  color: var(--muted);
+}
+
+.custom-steps,
+.custom-pages {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.custom-step,
+.custom-page {
+  position: relative;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .custom-step,
+  .custom-page {
+    transition: transform 160ms var(--ease-out);
+  }
+}
+
+.custom-step:active,
+.custom-page:active {
+  transform: scale(0.95);
+}
+
+/* Each step shows the current accent hue at its own intensity. */
+.custom-step {
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.custom-step::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 26px;
+  height: 26px;
+  margin: auto;
+  border-radius: var(--radius-pill);
+  background: light-dark(
+    oklch(var(--accent-l) var(--c) var(--hue)),
+    oklch(var(--accent-dl) calc(var(--c) * 0.825) var(--hue))
+  );
+  box-shadow: inset 0 0 0 1px light-dark(oklch(0 0 none / 0.12), oklch(1 0 none / 0.2));
+}
+
+.custom-step[aria-checked="true"]::before {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+
+.custom-page {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+}
+
+.custom-page[aria-checked="true"] {
+  color: var(--ink);
+}
+
+/* The page this preset would paint, with the accent in the corner. --tint and
+ * --tint-k are set inline per tile. */
+.custom-tile {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: light-dark(
+    oklch(var(--bg-l) calc(0.013 * var(--tint-k)) var(--tint)),
+    oklch(var(--bg-dl) calc(0.009 * var(--tint-k)) var(--tint))
+  );
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.custom-tile::after {
+  content: "";
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
+.custom-page[aria-checked="true"] .custom-tile {
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+
+.custom-exact {
+  border-top: 1px solid var(--line);
+}
+
+.custom-exact summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 40px;
+  font-size: 13px;
+  color: var(--ink-2);
+  list-style: none;
+  cursor: pointer;
+}
+
+.custom-exact summary::-webkit-details-marker {
+  display: none;
+}
+
+.custom-exact summary .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .custom-exact summary .icon {
+    transition: transform 200ms var(--ease-out);
+  }
+}
+
+.custom-exact[open] summary .icon {
+  transform: rotate(180deg);
+}
+
+.custom-exact-body {
+  display: grid;
+  gap: 10px;
+  padding-block: 2px 4px;
+}
+
+.custom-rgb {
+  display: grid;
+  grid-template-columns: 22px 1fr repeat(3, 58px);
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.custom-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px light-dark(oklch(0 0 none / 0.12), oklch(1 0 none / 0.28));
+}
+
+.custom-channel {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding-inline-start: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.custom-channel:focus-within {
+  border-color: color-mix(in oklch, var(--accent) 60%, transparent);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.custom-channel input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding-inline: 4px 6px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: right;
+  appearance: textfield;
+}
+
+.custom-channel input::-webkit-inner-spin-button,
+.custom-channel input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.custom-warn {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--warm);
+}
+
+.custom-exact-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.custom-exact-foot p {
+  flex: 1;
+}
+
+.custom-reset {
+  height: 28px;
+  padding-inline: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}

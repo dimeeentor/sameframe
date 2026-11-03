@@ -24,6 +24,29 @@
         document.documentElement.dataset.theme = theme
         document.documentElement.dataset.palette =
           localStorage.getItem("sameframe-palette") || "raspberry"
+        try {
+          const c = JSON.parse(localStorage.getItem("sameframe-custom") || "{}")
+          const st = document.documentElement.style
+          for (const k of ["hue", "chroma", "tint", "k"]) if (Number.isFinite(c[k])) st.setProperty("--custom-" + k, c[k])
+          // Exact colours; mirrors the effect in settings.svelte.ts and inkFor in color.ts.
+          const ok = (v) => Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
+          const rgb = (v) => "rgb(" + v.join(" ") + ")"
+          const lum = (v) =>
+            v
+              .map((n) => ((n /= 255) <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4))
+              .reduce((sum, n, i) => sum + n * [0.2126, 0.7152, 0.0722][i], 0)
+          // 0.0061 is the luminance of the dark ink, rgb(24 16 18).
+          const ink = (v) => (1.05 / (lum(v) + 0.05) >= (lum(v) + 0.05) / 0.0561 ? "rgb(255 255 255)" : "rgb(24 16 18)")
+          for (const [mode, sfx] of [["light", ""], ["dark", "-d"]]) {
+            const e = c.exact && c.exact[mode]
+            if (!e) continue
+            if (ok(e.accent)) {
+              st.setProperty("--custom-accent" + sfx, rgb(e.accent))
+              st.setProperty("--custom-ink" + sfx, ink(e.accent))
+            }
+            if (ok(e.page)) st.setProperty("--custom-page" + sfx, rgb(e.page))
+          }
+        } catch {}
       }
     </script>
   </head>

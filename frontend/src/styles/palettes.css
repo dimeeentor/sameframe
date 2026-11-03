@@ -15,18 +15,6 @@
   --accent-l: 0.54;
 }
 
-[data-palette="merino"] {
-  --hue: 55;
-  --tint: 70;
-  --chroma: 0.08;
-  --tint-k: 1.2;
-  --bg-l: 0.969;
-  --bg-c: 0.017;
-  --bg-dl: 0.125;
-  --bg-dc: 0.011;
-  --accent-l: 0.54;
-}
-
 [data-palette="alpine"] {
   --hue: 245;
   --tint: 240;
@@ -37,30 +25,6 @@
   --bg-dl: 0.148;
   --bg-dc: 0.014;
   --accent-l: 0.5;
-}
-
-[data-palette="buttercream"] {
-  --hue: 25;
-  --tint: 90;
-  --chroma: 0.19;
-  --tint-k: 1.95;
-  --bg-l: 0.957;
-  --bg-c: 0.035;
-  --bg-dl: 0.159;
-  --bg-dc: 0.02;
-  --accent-l: 0.53;
-}
-
-[data-palette="coastal"] {
-  --hue: 215;
-  --tint: 215;
-  --chroma: 0.1;
-  --tint-k: 1.65;
-  --bg-l: 0.957;
-  --bg-c: 0.027;
-  --bg-dl: 0.181;
-  --bg-dc: 0.016;
-  --accent-l: 0.51;
 }
 
 [data-palette="glacier"] {
@@ -75,18 +39,6 @@
   --accent-l: 0.51;
 }
 
-[data-palette="ivory"] {
-  --hue: 95;
-  --tint: 100;
-  --chroma: 0.03;
-  --tint-k: 1.12;
-  --bg-l: 0.949;
-  --bg-c: 0.013;
-  --bg-dl: 0.18;
-  --bg-dc: 0.008;
-  --accent-l: 0.52;
-}
-
 [data-palette="lavender"] {
   --hue: 295;
   --tint: 295;
@@ -96,18 +48,6 @@
   --bg-c: 0.024;
   --bg-dl: 0.154;
   --bg-dc: 0.02;
-  --accent-l: 0.54;
-}
-
-[data-palette="newsprint"] {
-  --hue: 255;
-  --tint: 100;
-  --chroma: 0.1;
-  --tint-k: 0.75;
-  --bg-l: 0.963;
-  --bg-c: 0.002;
-  --bg-dl: 0.146;
-  --bg-dc: 0.004;
   --accent-l: 0.54;
 }
 
@@ -133,30 +73,6 @@
   --bg-dl: 0.144;
   --bg-dc: 0.023;
   --accent-l: 0.53;
-}
-
-[data-palette="porcelain"] {
-  --hue: 270;
-  --tint: 230;
-  --chroma: 0.17;
-  --tint-k: 1.12;
-  --bg-l: 0.967;
-  --bg-c: 0.014;
-  --bg-dl: 0.126;
-  --bg-dc: 0.007;
-  --accent-l: 0.54;
-}
-
-[data-palette="silver"] {
-  --hue: 250;
-  --tint: 260;
-  --chroma: 0.05;
-  --tint-k: 0.22;
-  --bg-l: 0.949;
-  --bg-c: 0.007;
-  --bg-dl: 0.167;
-  --bg-dc: 0.004;
-  --accent-l: 0.52;
 }
 
 [data-palette="parchment"] {
@@ -198,6 +114,36 @@
   --accent-dl: 0.92;
 }
 
+/* Built from the custom controls. The --custom-* values sit inline on <html> at
+ * all times so the custom swatch can show them while another palette is active.
+ * Everything else is set here too, so the swatch never inherits it from the
+ * active palette. */
+[data-palette="custom"] {
+  --hue: var(--custom-hue, 5);
+  --tint: var(--custom-tint, 5);
+  --tint-k: var(--custom-k, 1.3);
+  --chroma: var(--custom-chroma, 0.14);
+  --tinted: 1;
+  --bg-l: 0.961;
+  --bg-c: calc(0.013 * var(--tint-k));
+  --bg-dl: 0.161;
+  --bg-dc: calc(0.009 * var(--tint-k));
+  --accent-l: 0.54;
+  --accent-dl: 0.74;
+  /* Exact colours typed as RGB, per mode, win over the formulas in tokens.css
+   * when set. Same fallbacks as there. */
+  --accent: light-dark(
+    var(--custom-accent, oklch(var(--accent-l) var(--chroma) var(--hue))),
+    var(--custom-accent-d, oklch(var(--accent-dl) calc(var(--chroma) * 0.825) var(--hue)))
+  );
+  --screen-accent: var(--custom-accent-d, oklch(var(--accent-dl) calc(var(--chroma) * 0.825) var(--hue)));
+  --accent-ink: light-dark(var(--custom-ink, white), var(--custom-ink-d, var(--screen-accent-ink)));
+  --bg: light-dark(
+    var(--custom-page, oklch(var(--bg-l) var(--bg-c) var(--tint))),
+    var(--custom-page-d, oklch(var(--bg-dl) var(--bg-dc) var(--tint)))
+  );
+}
+
 /* Picker swatches resolve their colours from their own palette; the :root
  * tokens are computed once and would not follow. Left half is the page, right
  * half the accent. */
@@ -214,5 +160,20 @@
     90deg,
     var(--swatch-page) 50%,
     var(--swatch-accent) 50%
+  );
+}
+
+/* Custom reads as "make your own" rather than another preset; the page itself
+ * previews the chosen colours. `>` keeps <html data-palette> from matching. */
+[data-palette="custom"] > .palette-swatch {
+  background: conic-gradient(
+    in oklch,
+    oklch(0.72 0.16 0),
+    oklch(0.72 0.16 60),
+    oklch(0.72 0.16 120),
+    oklch(0.72 0.16 180),
+    oklch(0.72 0.16 240),
+    oklch(0.72 0.16 300),
+    oklch(0.72 0.16 360)
   );
 }
