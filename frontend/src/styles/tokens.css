@@ -23,7 +23,7 @@
   --bg-l: 0.961;
   --bg-c: 0.018;
   --bg-dl: 0.161;
-  --bg-dc: 0.021;
+  --bg-dc: 0.013;
 
   --font-sans:
     "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
@@ -66,7 +66,7 @@
   );
   --accent-ink: light-dark(white, var(--screen-accent-ink));
   --accent-tint: color-mix(in oklch, var(--accent) 8%, var(--surface));
-  --accent-glow: color-mix(in oklch, var(--accent) 55%, transparent);
+  --accent-glow: color-mix(in oklch, var(--accent) 30%, transparent);
 
   --live: light-dark(oklch(0.614 0.15 152.3), oklch(0.8 0.182 151.7));
   --berry: light-dark(oklch(0.55 0.2 8), oklch(0.68 0.19 8));
