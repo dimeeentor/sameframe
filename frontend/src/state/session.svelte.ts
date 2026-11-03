@@ -56,8 +56,11 @@ export const resume = $state<{ code: RoomCode | null }>({ code: null })
 let answerResume: (cont: boolean) => void = () => {}
 
 export function chooseResume(cont: boolean) {
-  resume.code = null
   answerResume(cont)
+  whenReady((s) => {
+    s.join()
+    resume.code = null
+  })
 }
 
 export const notFound = $state<{ code: RoomCode | null }>({ code: null })

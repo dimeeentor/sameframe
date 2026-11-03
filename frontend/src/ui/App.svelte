@@ -5,7 +5,6 @@ import { isTypingTarget } from "../app/domain"
 import Header from "./Header.svelte"
 import Player from "./Player.svelte"
 import Panel from "./Panel.svelte"
-import JoinGate from "./JoinGate.svelte"
 
 let panel: Panel | undefined = $state()
 let stageHeight = $state(0)
@@ -47,8 +46,6 @@ function onKeydown(e: KeyboardEvent) {
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
-
-<JoinGate />
 
 <div class="app">
   <Header />

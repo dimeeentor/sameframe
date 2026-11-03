@@ -25,7 +25,7 @@ const gateHint = $derived(
 
 <div class={["stage", { playing: view.isPlaying && !!view.videoId }]} bind:clientHeight={stageHeight}>
   <div class="frame">
-    <div class="player-wrap">
+    <div class={["player-wrap", { dimmed: !view.joined }]}>
       <div bind:this={host} id="player"></div>
 
       <!-- one persistent placeholder so the leader keeps sweeping while only the copy swaps -->

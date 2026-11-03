@@ -59,6 +59,16 @@
   box-shadow:
     0 0 0 1px var(--line),
     var(--shadow-md);
+  outline: 100vmax solid transparent;
+  transition:
+    outline-color 240ms var(--ease-out),
+    z-index 0s 240ms;
+}
+
+.player-wrap.dimmed {
+  z-index: 40;
+  outline-color: color-mix(in oklch, var(--scrim) 62%, transparent);
+  transition: none;
 }
 
 .player-wrap:fullscreen {
