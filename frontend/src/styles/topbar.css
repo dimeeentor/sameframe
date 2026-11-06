@@ -95,6 +95,7 @@
 
 .presence-conn {
   display: inline-grid;
+  text-align: start;
   color: var(--ink-2);
   font-weight: 550;
 }

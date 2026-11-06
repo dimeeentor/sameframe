@@ -19,7 +19,7 @@ const pad = (n: number) => String(n).padStart(2, "0")
 const gateHint = $derived(
   view.videoId
     ? `${titleOf(view.videoId)} is already playing. Join to pick it up in sync.`
-    : "Join first, then paste a YouTube link to start watching together.",
+    : "Join the room, then paste a YouTube link to start.",
 )
 </script>
 
@@ -51,14 +51,12 @@ const gateHint = $derived(
                   </button>
                 </div>
               {:else if !view.joined}
-                <span class="eyebrow">Reel 00 · Standby</span>
                 <h2>Watch together</h2>
                 <p>{gateHint}</p>
                 <button class="btn primary large" type="button" onclick={() => session.join()}>
                   Join room
                 </button>
               {:else}
-                <span class="eyebrow">Reel 00 · Empty</span>
                 <h2>Nothing on screen yet</h2>
                 <p>Paste a YouTube link to start the show.</p>
               {/if}

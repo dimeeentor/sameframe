@@ -119,9 +119,6 @@ a,
 
 .eyebrow {
   color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 550;
 }

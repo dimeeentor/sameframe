@@ -190,12 +190,7 @@
   padding-inline: 24px;
 }
 
-.placeholder .eyebrow {
-  color: color-mix(in oklch, var(--screen-flare) 50%, transparent);
-}
-
 .placeholder h2 {
-  margin-block-start: 10px;
   font-family: var(--font-display);
   font-size: clamp(1.875rem, 0.25rem + 5cqi, 3.5rem);
   font-style: italic;
@@ -216,6 +211,14 @@
   color: var(--screen-accent-ink);
   background: var(--screen-accent);
   --accent-glow: color-mix(in oklch, var(--screen-accent) 30%, transparent);
+}
+
+/* The screen is dark in both themes, so hover lightens like dark mode does;
+   the global --accent-hover darkens the light-theme accent instead. */
+@media (hover: hover) and (pointer: fine) {
+  .placeholder .btn.primary:hover {
+    background: color-mix(in oklch, var(--screen-accent), white 14%);
+  }
 }
 
 .placeholder-inner:has(.resume-actions) {
