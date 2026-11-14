@@ -1,28 +1,29 @@
 /** Title cache: /api/title fetch + in-flight dedup + fallback to the raw id.
- *  Reactive via SvelteMap, so components re-render when a title lands. */
-import { SvelteMap } from "svelte/reactivity"
+ *  Reactive via a store, so components re-render when a title lands. */
+import { createStore } from "solid-js"
 
-const titles = new SvelteMap<string, string>()
+const [titles, setTitles] = createStore<Record<string, string>>({})
 const inflight = new Map<string, Promise<void>>()
 
 export function titleOf(id: string): string {
-  return titles.get(id) ?? id
+  return titles[id] ?? id
 }
 
 export function ensureTitle(id: string): void {
-  if (titles.has(id) || inflight.has(id)) return
+  if (id in titles || inflight.has(id)) return
+  const set = (title: string) => setTitles((d) => void (d[id] = title))
   const p = (async () => {
     try {
       const res = await fetch(`/api/title?id=${id}`)
       if (res.ok) {
         const j = (await res.json()) as { title: string }
-        titles.set(id, j.title ?? id)
+        set(j.title ?? id)
         return
       }
     } catch {
       // network/parse failure; fall through to the id-as-title fallback below
     }
-    titles.set(id, id)
+    set(id)
   })().finally(() => inflight.delete(id))
   inflight.set(id, p)
 }

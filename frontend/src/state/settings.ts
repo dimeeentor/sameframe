@@ -1,6 +1,7 @@
 /** Theme. Not sync domain (the server never sees it), so it stays out of the
  *  session. */
-import { MediaQuery } from "svelte/reactivity"
+import { createEffect, createMemo, createRoot, createStore, flush, snapshot } from "solid-js"
+import { mediaQuery } from "./media"
 import { css, inkFor, type Rgb } from "./color"
 
 export type Theme = "light" | "dark"
@@ -110,63 +111,68 @@ function readCustom(): CustomPalette {
   }
 }
 
-const prefersLight = new MediaQuery("prefers-color-scheme: light")
+const prefersLight = mediaQuery("(prefers-color-scheme: light)")
 
-class Settings {
-  themeMode = $state<ThemeMode>(readMode() ?? "system")
-  palette = $state<Palette>(readPalette())
-  custom = $state<CustomPalette>(readCustom())
-  /** The theme actually painted. */
-  theme = $derived<Theme>(
-    this.themeMode === "system"
-      ? prefersLight.current
-        ? "light"
-        : "dark"
-      : this.themeMode,
+export const [settings, setSettings] = createStore({
+  themeMode: readMode() ?? ("system" as ThemeMode),
+  palette: readPalette(),
+  custom: readCustom(),
+})
+
+/** The theme actually painted. */
+export const theme = createRoot(() => {
+  const theme = createMemo<Theme>(() =>
+    settings.themeMode === "system" ? (prefersLight() ? "light" : "dark") : settings.themeMode,
   )
-}
-
-export const settings = new Settings()
-
-$effect.root(() => {
-  $effect(() => {
-    document.documentElement.setAttribute("data-theme", settings.theme)
-  })
-  $effect(() => {
-    document.documentElement.setAttribute("data-palette", settings.palette)
-  })
-  $effect(() => {
-    const s = document.documentElement.style
-    for (const k of ["hue", "chroma", "tint", "k"] as const) s.setProperty(`--custom-${k}`, String(settings.custom[k]))
-    // palettes.css prefers these over the derived colours when they're set.
-    const { light, dark } = settings.custom.exact
-    const put = (name: string, v: string | null) => (v ? s.setProperty(name, v) : s.removeProperty(name))
-    put("--custom-accent", light.accent && css(light.accent))
-    put("--custom-accent-d", dark.accent && css(dark.accent))
-    put("--custom-ink", light.accent && inkFor(light.accent))
-    put("--custom-ink-d", dark.accent && inkFor(dark.accent))
-    put("--custom-page", light.page && css(light.page))
-    put("--custom-page-d", dark.page && css(dark.page))
-  })
+  const root = document.documentElement
+  createEffect(theme, (t) => root.setAttribute("data-theme", t))
+  createEffect(
+    () => settings.palette,
+    (p) => root.setAttribute("data-palette", p),
+  )
+  createEffect(
+    () => {
+      const c = settings.custom
+      const { light, dark } = c.exact
+      // palettes.css prefers the exact colours over the derived ones when they're set.
+      return [
+        ...(["hue", "chroma", "tint", "k"] as const).map((k) => [`--custom-${k}`, String(c[k])]),
+        ["--custom-accent", light.accent && css(light.accent)],
+        ["--custom-accent-d", dark.accent && css(dark.accent)],
+        ["--custom-ink", light.accent && inkFor(light.accent)],
+        ["--custom-ink-d", dark.accent && inkFor(dark.accent)],
+        ["--custom-page", light.page && css(light.page)],
+        ["--custom-page-d", dark.page && css(dark.page)],
+      ] as [string, string | null][]
+    },
+    (vars) => {
+      for (const [name, v] of vars) {
+        if (v) root.style.setProperty(name, v)
+        else root.style.removeProperty(name)
+      }
+    },
+  )
+  return theme
 })
 
 export function setThemeMode(mode: ThemeMode) {
-  settings.themeMode = mode
+  setSettings((d) => void (d.themeMode = mode))
   try {
     localStorage.setItem(THEME_KEY, mode)
   } catch {}
 }
 
 export function setPalette(palette: Palette) {
-  settings.palette = palette
+  setSettings((d) => void (d.palette = palette))
   try {
     localStorage.setItem(PALETTE_KEY, palette)
   } catch {}
 }
 
 export function saveCustom() {
+  flush() // writes are staged until the next microtask; persist what was just set
   try {
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(settings.custom))
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify(snapshot(settings.custom)))
   } catch {}
 }
 

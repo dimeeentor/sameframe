@@ -1,5 +1,5 @@
 /** Reactive boundary. Owns room boot (create-or-join via ?room=). */
-import { tick } from "svelte"
+import { createStore, flush } from "solid-js"
 import { createSession } from "../app/session.ts"
 import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
@@ -52,25 +52,25 @@ async function findResumable(): Promise<RoomCode | null> {
 }
 
 /** Set while a bare-URL visit waits on the user's continue/start-fresh choice. */
-export const resume = $state<{ code: RoomCode | null }>({ code: null })
+export const [resume, setResume] = createStore<{ code: RoomCode | null }>({ code: null })
 let answerResume: (cont: boolean) => void = () => {}
 
 export function chooseResume(cont: boolean) {
   answerResume(cont)
   whenReady((s) => {
     s.join()
-    resume.code = null
+    setResume((d) => void (d.code = null))
   })
 }
 
-export const notFound = $state<{ code: RoomCode | null }>({ code: null })
+export const [notFound, setNotFound] = createStore<{ code: RoomCode | null }>({ code: null })
 
 async function ensureRoomCode(): Promise<RoomCode | null> {
   const existing = getRoomFromUrl()
   if (existing) {
     const res = await fetch(`/api/rooms/${existing}`).catch(() => null)
     if (res?.status === 404) {
-      notFound.code = existing
+      setNotFound((d) => void (d.code = existing))
       return null
     }
     return existing
@@ -79,7 +79,7 @@ async function ensureRoomCode(): Promise<RoomCode | null> {
   // no ?room=: offer the previous room, else create one. Either way rewrite the URL
   let code = await findResumable()
   if (code) {
-    resume.code = code
+    setResume((d) => void (d.code = code))
     if (!(await new Promise<boolean>((r) => (answerResume = r)))) code = null
   }
   if (!code) {
@@ -112,7 +112,7 @@ function whenReady(fn: (s: Session) => void) {
   }
 }
 
-export const view = $state<SyncSnapshot>({
+export const [view, setView] = createStore<SyncSnapshot>({
   videoId: null,
   queue: [],
   queueIndex: -1,
@@ -133,12 +133,12 @@ export const view = $state<SyncSnapshot>({
 // Holds the pending request so a release issued mid-request still reaches the lock.
 let wakeLock: Promise<WakeLockSentinel | void> | null = null
 
-function syncWakeLock() {
+function syncWakeLock(v: SyncSnapshot = view) {
   if (!navigator.wakeLock) return
   const want =
-    view.isPlaying &&
-    view.joined &&
-    !view.kicked &&
+    v.isPlaying &&
+    v.joined &&
+    !v.kicked &&
     document.visibilityState === "visible"
   if (want && !wakeLock) {
     const p: Promise<WakeLockSentinel | void> = navigator.wakeLock
@@ -160,14 +160,15 @@ function syncWakeLock() {
     void p.then((l) => l?.release()).catch(() => {})
   }
 }
-document.addEventListener("visibilitychange", syncWakeLock)
+document.addEventListener("visibilitychange", () => syncWakeLock())
 
 function startSession(code: RoomCode) {
   const transport = createTransport(code, { ownerToken: () => getToken(code) })
   _session = createSession(transport, createPlayer(), code)
   _session.subscribe((snap) => {
-    Object.assign(view, snap)
-    syncWakeLock()
+    setView((d) => void Object.assign(d, snap))
+    // the store write is staged, so read the fresh snapshot
+    syncWakeLock(snap)
     // an empty room isn't worth resuming, and must not displace one that is
     if (snap.videoId || snap.queue.length) {
       try {
@@ -227,12 +228,12 @@ export const session = {
     const token = getToken(_code)
     return token ? `${location.origin}/?room=${_code}#claim=${token}` : null
   },
-  async rejoin() {
+  rejoin() {
     if (!_code || !view.kicked) return
     _session?.stop()
     startSession(_code)
-    Object.assign(view, { kicked: false })
-    await tick()
+    setView((d) => void Object.assign(d, { kicked: false }))
+    flush() // mount the player so join() finds its host
     _session?.join()
   },
   async createNewRoom() {
