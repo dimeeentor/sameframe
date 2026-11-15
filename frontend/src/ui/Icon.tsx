@@ -1,4 +1,3 @@
-<script lang="ts" module>
 const PATHS = {
   sun:
     "M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7ZM12 2.5v2M12 19.5v2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M2.5 12h2M19.5 12h2M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4",
@@ -18,21 +17,20 @@ const PATHS = {
 } as const
 
 export type IconName = keyof typeof PATHS
-</script>
 
-<script lang="ts">
-let { name, stroke = 1.8 }: { name: IconName; stroke?: number } = $props()
-</script>
-
-<svg
-  class="icon"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width={name === "grip" ? 3.2 : stroke}
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  aria-hidden="true"
->
-  <path d={PATHS[name]} />
-</svg>
+export default function Icon(props: { name: IconName; stroke?: number }) {
+  return (
+    <svg
+      class="icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width={props.name === "grip" ? 3.2 : (props.stroke ?? 1.8)}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d={PATHS[props.name]} />
+    </svg>
+  )
+}

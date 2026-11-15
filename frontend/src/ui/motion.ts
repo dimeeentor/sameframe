@@ -1,62 +1,64 @@
-import type { TransitionConfig } from "svelte/transition"
-import { cubicInOut, quintOut } from "svelte/easing"
+import { createEffect } from "solid-js"
 
 const reducedQuery = matchMedia("(prefers-reduced-motion: reduce)")
 export const reducedMotion = () => reducedQuery.matches
 
-const fadeOnly = (duration: number, delay = 0): TransitionConfig => ({
-  duration,
-  delay,
-  css: (t) => `opacity: ${t}`,
-})
+const QUINT_OUT = "cubic-bezier(0.22, 1, 0.36, 1)"
+const CUBIC_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)"
 
-export function rise(
-  _node: Element,
-  { y = 8, blur = 4, duration = 280, delay = 0 } = {},
-): TransitionConfig {
-  if (reducedMotion()) return fadeOnly(160, delay)
-  return {
-    duration,
-    delay,
-    easing: quintOut,
-    css: (t, u) =>
-      `opacity: ${t}; transform: translateY(${u * y}px); filter: blur(${u * blur}px)`,
-  }
+type Timing = { duration: number; delay?: number; easing?: string; out?: boolean }
+type Opts = { duration?: number; delay?: number; out?: boolean }
+
+/** Frames run from hidden to shown; `out` plays them backwards, eased the same way. */
+function play(el: Element, frames: Keyframe[], { duration, delay = 0, easing = "linear", out = false }: Timing) {
+  if (out) frames = frames.reverse().map((f) => (f.offset == null ? f : { ...f, offset: 1 - f.offset }))
+  return el.animate(frames, { duration, delay, easing, fill: out ? "forwards" : "backwards" })
 }
 
-export function swap(
-  _node: Element,
-  { duration = 200 } = {},
-): TransitionConfig {
-  if (reducedMotion()) return fadeOnly(120)
-  return {
-    duration,
-    easing: quintOut,
-    css: (t, u) => `opacity: ${t}; filter: blur(${u * 3}px)`,
-  }
+export function fade(el: Element, { duration = 400, delay = 0, out = false }: Opts = {}) {
+  return play(el, [{ opacity: 0 }, { opacity: 1 }], { duration, delay, out })
 }
 
-export function collapse(
-  node: HTMLElement,
-  { duration = 240 } = {},
-): TransitionConfig {
-  if (reducedMotion()) return fadeOnly(120)
-  const style = getComputedStyle(node)
-  const h = node.offsetHeight
-  const pt = parseFloat(style.paddingTop)
-  const pb = parseFloat(style.paddingBottom)
-  return {
+export function rise(el: Element, { y = 8, blur = 4, duration = 280, delay = 0, out = false } = {}) {
+  if (reducedMotion()) return fade(el, { duration: 160, delay, out })
+  return play(
+    el,
+    [
+      { opacity: 0, transform: `translateY(${y}px)`, filter: `blur(${blur}px)` },
+      { opacity: 1, transform: "translateY(0px)", filter: "blur(0px)" },
+    ],
+    { duration, delay, easing: QUINT_OUT, out },
+  )
+}
+
+export function swap(el: Element, { duration = 200 } = {}) {
+  if (reducedMotion()) return fade(el, { duration: 120 })
+  return play(el, [{ opacity: 0, filter: "blur(3px)" }, { opacity: 1, filter: "blur(0px)" }], {
     duration,
-    easing: cubicInOut,
-    css: (t) => {
-      const o = Math.max(0, (t - 0.4) / 0.6)
-      return (
-        `overflow: hidden; opacity: ${o}; height: ${t * h}px;` +
-        `padding-top: ${t * pt}px; padding-bottom: ${t * pb}px;` +
-        `transform: scale(${0.97 + 0.03 * t})`
-      )
-    },
-  }
+    easing: QUINT_OUT,
+  })
+}
+
+/** Exit only: folds the element's height away. */
+export function collapse(el: HTMLElement, { duration = 240 } = {}) {
+  if (reducedMotion()) return fade(el, { duration: 120, out: true })
+  const style = getComputedStyle(el)
+  const h = `${el.offsetHeight}px`
+  el.style.overflow = "hidden"
+  return play(
+    el,
+    [
+      { opacity: 0, height: "0px", paddingTop: "0px", paddingBottom: "0px", transform: "scale(0.97)" },
+      { opacity: 0, offset: 0.4 },
+      { opacity: 1, height: h, paddingTop: style.paddingTop, paddingBottom: style.paddingBottom, transform: "scale(1)" },
+    ],
+    { duration, easing: CUBIC_IN_OUT, out: true },
+  )
+}
+
+/** Replays `anim` on `el` each time `key` changes after mount, like an intro on a keyed block. */
+export function replayOn(el: Element, key: () => unknown, anim: (el: Element) => Animation) {
+  createEffect(key, () => void anim(el), { defer: true })
 }
 
 export function shake(el: Element | undefined) {
