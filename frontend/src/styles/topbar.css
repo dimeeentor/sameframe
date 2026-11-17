@@ -653,3 +653,70 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* Lines trade places. Each lane carries the vertical travel (a transition, so it
+   retargets if toggled mid-flight); the rect carries a sideways bow and the
+   shortening, so the two lines pass on opposite sides instead of colliding. */
+.burger rect {
+  fill: currentColor;
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+}
+.burger .lane {
+  transition: transform 340ms var(--ease-drawer);
+}
+.burger .b {
+  transition-delay: 30ms;
+}
+.burger[data-open="true"] .a {
+  transform: translateY(8px);
+}
+.burger[data-open="true"] .b {
+  transform: translateY(-8px);
+}
+.burger .b rect {
+  transition: scale 220ms var(--ease-out);
+}
+.burger[data-open="true"] .b rect {
+  scale: 0.56 1;
+}
+
+.burger[data-touched="true"] rect {
+  animation-duration: 340ms;
+  animation-timing-function: ease-in-out;
+}
+.burger[data-touched="true"][data-open="true"] .a rect { animation-name: bow-l; }
+.burger[data-touched="true"][data-open="false"] .a rect { animation-name: bow-l-back; }
+.burger[data-touched="true"][data-open="true"] .b rect { animation-name: bow-r; animation-delay: 30ms; }
+.burger[data-touched="true"][data-open="false"] .b rect { animation-name: bow-r-back; animation-delay: 30ms; }
+
+@keyframes bow-l { 50% { transform: translateX(-3px); } }
+@keyframes bow-l-back { 50% { transform: translateX(-3px); } }
+@keyframes bow-r { 50% { transform: translateX(3px); } }
+@keyframes bow-r-back { 50% { transform: translateX(3px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .burger .lane,
+  .burger .b rect {
+    transition-duration: 0s;
+  }
+  .burger rect {
+    animation: none !important;
+  }
+}
+.presence-btn {
+  position: relative;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .presence-btn:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+}
+.presence-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
