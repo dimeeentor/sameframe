@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="/icon.png" />
     <title>Sameframe</title>
     <script>
-      // Pre-paint theme (must mirror settings.svelte.ts): explicit choice wins,
+      // Pre-paint theme (must mirror state/settings.ts): explicit choice wins,
       // else system preference. Prevents a light flash in dark mode.
       {
         const t = localStorage.getItem("sameframe-theme")
@@ -28,7 +28,7 @@
           const c = JSON.parse(localStorage.getItem("sameframe-custom") || "{}")
           const st = document.documentElement.style
           for (const k of ["hue", "chroma", "tint", "k"]) if (Number.isFinite(c[k])) st.setProperty("--custom-" + k, c[k])
-          // Exact colours; mirrors the effect in settings.svelte.ts and inkFor in color.ts.
+          // Exact colours; mirrors the effect in state/settings.ts and inkFor in color.ts.
           const ok = (v) => Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)
           const rgb = (v) => "rgb(" + v.join(" ") + ")"
           const lum = (v) =>
@@ -63,6 +63,6 @@
       }
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

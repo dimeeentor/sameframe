@@ -1,7 +1,7 @@
-import { mount } from "svelte"
+import { render } from "@solidjs/web"
 import "./styles/fonts.css"
 import "./app.css"
-import App from "./ui/App.svelte"
+import App from "./ui/App"
 
 const fonts = [
   '1em "Geist Variable"',
@@ -14,5 +14,5 @@ void Promise.race([
   new Promise((r) => setTimeout(r, 1500)),
 ]).then(() => {
   const target = document.getElementById("app")
-  if (target) mount(App, { target })
+  if (target) render(() => <App />, target)
 })
