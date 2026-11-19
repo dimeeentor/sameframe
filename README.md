@@ -22,7 +22,7 @@ install pnpm first if you don't have it: https://pnpm.io/installation
 ```bash
 cd <your-clone>
 pnpm install       # installs frontend + backend deps (first run only)
-pnpm run build     # builds the svelte frontend into frontend/dist
+pnpm run build     # builds the solid frontend into frontend/dist
 pnpm run dev       # builds the frontend, then runs the worker locally via wrangler dev
 pnpm run check     # type-checks the backend
 ```

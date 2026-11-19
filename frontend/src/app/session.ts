@@ -1,6 +1,6 @@
 /** Sync policy. Owns the reduction of server messages into
  *  state, optimistic commands, suppression windows, drift correction, and the
- *  400ms tick. Plain TS, testable with fake transport/player, no DOM, no Svelte.
+ *  400ms tick. Plain TS, testable with fake transport/player, no DOM, no Solid.
  *
  *  Key invariant: the server broadcasts `load`/`queue` back to their sender, so
  *  the reducer must be idempotent under own-echo (a `load` for the video we

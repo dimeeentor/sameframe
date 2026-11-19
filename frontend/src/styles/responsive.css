@@ -6,7 +6,7 @@
   }
 }
 
-/* keep in sync with COMPACT in state/media.svelte.ts */
+/* keep in sync with COMPACT in state/media.ts */
 @media (max-width: 720px) {
   .app {
     gap: 0;

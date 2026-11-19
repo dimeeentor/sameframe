@@ -1,6 +1,6 @@
 /* Client-selectable palettes. Each sets the accent hue, the neutrals' tint and
  * the accent chroma, --tint-k (how strongly the neutrals are tinted) and its own page background (--bg-*); tokens.css derives everything else. Raspberry is the
- * default, set in :root. Keep in sync with PALETTES in settings.svelte.ts. */
+ * default, set in :root. Keep in sync with PALETTES in state/settings.ts. */
 /* Same values as :root. Without this the raspberry swatch inherits whichever
  * palette is active instead of showing raspberry. */
 [data-palette="raspberry"] {
