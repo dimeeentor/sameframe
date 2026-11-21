@@ -1,6 +1,6 @@
 import { createSignal, Show } from "solid-js"
-import { notFound, view } from "../state/session"
-import { layout } from "../state/media"
+import { notFoundCode, view } from "../state/session"
+import { compact } from "../state/media"
 import CopyButton from "./CopyButton"
 import RoomTools from "./RoomTools"
 import Sheet from "./Sheet"
@@ -29,7 +29,7 @@ function PresenceBody() {
       <span class="presence-count">
         <span
           class="presence-num"
-          ref={(el) => replayOn(el, () => view.viewerCount, (el) => rise(el, { y: 6, blur: 2, duration: 240 }))}
+          ref={replayOn(() => view.viewerCount, (el) => rise(el, { y: 6, blur: 2, duration: 240 }))}
         >
           {view.viewerCount}
         </span>
@@ -49,12 +49,12 @@ export default function Header() {
 
   return (
     <>
-      <header class={["topbar", { bare: !!notFound.code }]}>
+      <header class={["topbar", { bare: !!notFoundCode() }]}>
         <span class="wordmark">
           Same<em>frame</em>
         </span>
 
-        <Show when={!notFound.code}>
+        <Show when={!notFoundCode()}>
           <Show
             when={view.isOwner}
             fallback={
@@ -77,7 +77,7 @@ export default function Header() {
           </Show>
 
           <div class="topbar-actions">
-            <Show when={!layout.compact}>
+            <Show when={!compact()}>
               <span class="room-chip" title="Room code">
                 <span class="room-chip-label">Room</span>
                 {view.roomCode ?? "······"}
@@ -117,7 +117,7 @@ export default function Header() {
       </header>
 
       <Sheet open={menuOpen()} onclose={() => setMenuOpen(false)} anchor={menuBtn} label="Room and settings">
-        <Show when={layout.compact}>
+        <Show when={compact()}>
           <section class="sheet-section room-card">
             <span class="eyebrow">You're in room</span>
             <span class="room-card-code">{view.roomCode ?? "······"}</span>

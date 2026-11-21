@@ -24,8 +24,7 @@ export default function QueueRow(props: Props) {
   function startDrag(e: PointerEvent) {
     if (activeDrag || e.button !== 0) return
     e.preventDefault()
-    const li = row
-    const list = li.parentElement
+    const list = row.parentElement
     if (!list) return
     const rows = Array.from(list.children) as HTMLElement[]
     const rects = rows.map((r) => r.getBoundingClientRect())
@@ -55,7 +54,7 @@ export default function QueueRow(props: Props) {
 
     const move = (m: PointerEvent) => {
       dy = m.clientY - startY
-      li.style.transform = `translateY(${dy}px) scale(1.02)`
+      row.style.transform = `translateY(${dy}px) scale(1.02)`
       const center = mids[from] + dy
       let t = from
       for (let i = from + 1; i < rows.length; i++) if (center > mids[i]) t = i
@@ -73,8 +72,8 @@ export default function QueueRow(props: Props) {
 
       const land =
         target > from ? rects[target].bottom - self.bottom : target < from ? rects[target].top - self.top : 0
-      li.style.transition = `transform ${SETTLE_MS}ms var(--ease-out)`
-      li.style.transform = `translateY(${land}px)`
+      row.style.transition = `transform ${SETTLE_MS}ms var(--ease-out)`
+      row.style.transform = `translateY(${land}px)`
       await new Promise((r) => setTimeout(r, SETTLE_MS))
 
       if (target !== from) {

@@ -1,5 +1,5 @@
-import { Match, onCleanup, Show, Switch } from "solid-js"
-import { chooseResume, resume, session, view } from "../state/session"
+import { Match, onSettled, Show, Switch } from "solid-js"
+import { chooseResume, resumeCode, session, view } from "../state/session"
 import { titleOf } from "../state/titles"
 import Icon from "./Icon"
 import { Transition } from "./Transition"
@@ -13,14 +13,15 @@ export default function Player(props: { onheight?: (px: number) => void }) {
       ? `${titleOf(view.videoId)} is already playing. Join to pick it up in sync.`
       : "Join the room, then paste a YouTube link to start."
 
-  function observe(el: HTMLElement) {
-    const ro = new ResizeObserver(() => props.onheight?.(el.clientHeight))
-    ro.observe(el)
-    onCleanup(() => ro.disconnect())
-  }
+  let stage!: HTMLDivElement
+  onSettled(() => {
+    const ro = new ResizeObserver(() => props.onheight?.(stage.clientHeight))
+    ro.observe(stage)
+    return () => ro.disconnect()
+  })
 
   return (
-    <div class={["stage", { playing: view.isPlaying && !!view.videoId }]} ref={observe}>
+    <div class={["stage", { playing: view.isPlaying && !!view.videoId }]} ref={(el) => (stage = el)}>
       <div class="frame">
         <div class={["player-wrap", { dimmed: !view.joined }]}>
           <div ref={(el) => session.attachPlayer(el)} id="player"></div>
@@ -35,12 +36,12 @@ export default function Player(props: { onheight?: (px: number) => void }) {
                   <span class="leader-ring inner"></span>
                   <span class="leader-cross"></span>
                 </div>
-                <div class="placeholder-inner" ref={(el) => replayOn(el, () => (resume.code ? "resume" : view.joined), swap)}>
+                <div class="placeholder-inner" ref={replayOn(() => (resumeCode() ? "resume" : view.joined), swap)}>
                   <Switch>
-                    <Match when={resume.code}>
+                    <Match when={resumeCode()}>
                       <h2>Pick up where you left off?</h2>
                       <p>
-                        Room <span class="resume-code">{resume.code}</span> is still open.
+                        Room <span class="resume-code">{resumeCode()}</span> is still open.
                       </p>
                       <div class="resume-actions">
                         <button class="btn primary large" type="button" onClick={() => chooseResume(true)}>
@@ -85,7 +86,7 @@ export default function Player(props: { onheight?: (px: number) => void }) {
                 </Show>
               </span>
               <span class="now-title-cell">
-                <span class="now-title" ref={(el) => replayOn(el, id, swap)}>
+                <span class="now-title" ref={replayOn(id, swap)}>
                   {titleOf(id())}
                 </span>
               </span>

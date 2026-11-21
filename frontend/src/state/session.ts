@@ -1,5 +1,5 @@
 /** Reactive boundary. Owns room boot (create-or-join via ?room=). */
-import { createStore, flush } from "solid-js"
+import { createSignal, createStore, flush, reconcile } from "solid-js"
 import { createSession } from "../app/session.ts"
 import { createTransport } from "../app/transport.ts"
 import { createPlayer } from "../app/player.ts"
@@ -52,25 +52,25 @@ async function findResumable(): Promise<RoomCode | null> {
 }
 
 /** Set while a bare-URL visit waits on the user's continue/start-fresh choice. */
-export const [resume, setResume] = createStore<{ code: RoomCode | null }>({ code: null })
+export const [resumeCode, setResumeCode] = createSignal<RoomCode | null>(null)
 let answerResume: (cont: boolean) => void = () => {}
 
 export function chooseResume(cont: boolean) {
   answerResume(cont)
   whenReady((s) => {
     s.join()
-    setResume((d) => void (d.code = null))
+    setResumeCode(null)
   })
 }
 
-export const [notFound, setNotFound] = createStore<{ code: RoomCode | null }>({ code: null })
+export const [notFoundCode, setNotFoundCode] = createSignal<RoomCode | null>(null)
 
 async function ensureRoomCode(): Promise<RoomCode | null> {
   const existing = getRoomFromUrl()
   if (existing) {
     const res = await fetch(`/api/rooms/${existing}`).catch(() => null)
     if (res?.status === 404) {
-      setNotFound((d) => void (d.code = existing))
+      setNotFoundCode(existing)
       return null
     }
     return existing
@@ -79,7 +79,7 @@ async function ensureRoomCode(): Promise<RoomCode | null> {
   // no ?room=: offer the previous room, else create one. Either way rewrite the URL
   let code = await findResumable()
   if (code) {
-    setResume((d) => void (d.code = code))
+    setResumeCode(code)
     if (!(await new Promise<boolean>((r) => (answerResume = r)))) code = null
   }
   if (!code) {
@@ -166,7 +166,8 @@ function startSession(code: RoomCode) {
   const transport = createTransport(code, { ownerToken: () => getToken(code) })
   _session = createSession(transport, createPlayer(), code)
   _session.subscribe((snap) => {
-    setView((d) => void Object.assign(d, snap))
+    // reconcile, not Object.assign: a fresh array would re-run every reader of queue/viewers
+    setView((d) => void reconcile(snap, "id")(d))
     // the store write is staged, so read the fresh snapshot
     syncWakeLock(snap)
     // an empty room isn't worth resuming, and must not displace one that is

@@ -1,7 +1,7 @@
 import { createEffect } from "solid-js"
 
 const reducedQuery = matchMedia("(prefers-reduced-motion: reduce)")
-export const reducedMotion = () => reducedQuery.matches
+const reducedMotion = () => reducedQuery.matches
 
 const QUINT_OUT = "cubic-bezier(0.22, 1, 0.36, 1)"
 const CUBIC_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)"
@@ -56,9 +56,12 @@ export function collapse(el: HTMLElement, { duration = 240 } = {}) {
   )
 }
 
-/** Replays `anim` on `el` each time `key` changes after mount, like an intro on a keyed block. */
-export function replayOn(el: Element, key: () => unknown, anim: (el: Element) => Animation) {
-  createEffect(key, () => void anim(el), { defer: true })
+/** Ref factory: replays `anim` on the element each time `key` changes after mount,
+ *  like an intro on a keyed block. Call it in `ref={...}`, not inside a ref callback. */
+export function replayOn(key: () => unknown, anim: (el: Element) => Animation) {
+  let el: Element | undefined
+  createEffect(key, () => void (el && anim(el)), { defer: true })
+  return (e: Element) => void (el = e)
 }
 
 export function shake(el: Element | undefined) {

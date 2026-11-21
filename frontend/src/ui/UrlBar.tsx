@@ -10,7 +10,6 @@ export default function UrlBar(props: { ondone?: () => void; inputRef?: (el: HTM
   const [focused, setFocused] = createSignal(false)
   const [loadedThumb, setLoadedThumb] = createSignal<string | null>(null)
   let flashTimer: ReturnType<typeof setTimeout> | undefined
-  let input!: HTMLInputElement
   let root!: HTMLDivElement
 
   const candidate = () => parseVideoId(value())
@@ -48,10 +47,7 @@ export default function UrlBar(props: { ondone?: () => void; inputRef?: (el: HTM
           </Show>
         </span>
         <input
-          ref={(el) => {
-            input = el
-            props.inputRef?.(el)
-          }}
+          ref={props.inputRef}
           value={value()}
           onInput={(e) => setValue(e.currentTarget.value)}
           type="text"
@@ -65,7 +61,7 @@ export default function UrlBar(props: { ondone?: () => void; inputRef?: (el: HTM
           onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
             if (e.key === "Enter") addToQueue()
-            if (e.key === "Escape") input.blur()
+            if (e.key === "Escape") e.currentTarget.blur()
           }}
         />
         <Show when={!focused() && !value()}>

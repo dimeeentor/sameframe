@@ -9,18 +9,18 @@ export default function ViewersSheet(props: { open: boolean; onclose: () => void
       <section class="sheet-section">
         <span class="eyebrow">Watching</span>
         <ul class="viewers">
-          <For each={view.viewers} keyed={(v) => v.id}>
+          <For each={view.viewers}>
             {(v) => (
               <li class="viewer">
-                <span class="viewer-name">{v().label}</span>
-                <Show when={v().isYou}>
+                <span class="viewer-name">{v.label}</span>
+                <Show when={v.isYou}>
                   <span class="viewer-tag">you</span>
                 </Show>
-                <Show when={v().isOwner}>
+                <Show when={v.isOwner}>
                   <span class="viewer-tag">owner</span>
                 </Show>
-                <Show when={!v().isYou}>
-                  <button class="btn subtle" type="button" onClick={() => session.kick(v().id)}>
+                <Show when={!v.isYou}>
+                  <button class="btn subtle" type="button" onClick={() => session.kick(v.id)}>
                     Remove
                   </button>
                 </Show>

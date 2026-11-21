@@ -9,10 +9,4 @@ export function mediaQuery(query: string) {
   return matches
 }
 
-const compact = mediaQuery("(max-width: 720px)")
-
-export const layout = {
-  get compact() {
-    return compact()
-  },
-}
+export const compact = mediaQuery("(max-width: 720px)")

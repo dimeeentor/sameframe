@@ -1,5 +1,5 @@
-import { createEffect, createSignal, Show } from "solid-js"
-import { notFound, session, view } from "../state/session"
+import { createEffect, createSignal, Match, Switch } from "solid-js"
+import { notFoundCode, session, view } from "../state/session"
 import { ensureTitle, titleOf } from "../state/titles"
 import { isTypingTarget } from "../app/domain"
 import Header from "./Header"
@@ -52,41 +52,38 @@ export default function App() {
     <div class="app">
       <Header />
       <main
-        class={["main", { centered: !!notFound.code }]}
+        class={["main", { centered: !!notFoundCode() }]}
         style={{ "--stage-h": stageHeight() ? `${stageHeight()}px` : undefined }}
       >
-        <Show
-          when={notFound.code}
+        <Switch
           fallback={
-            <Show
-              when={view.kicked}
-              fallback={
-                <>
-                  <Player onheight={setStageHeight} />
-                  <Panel api={(api) => (panel = api)} />
-                </>
-              }
-            >
-              <div class="kicked">
-                <h2 class="kicked-title">You left the room</h2>
-                <p class="kicked-note">The video stopped so this device can sleep.</p>
-                <button class="btn primary large" type="button" onClick={() => session.rejoin()}>
-                  Rejoin
-                </button>
-              </div>
-            </Show>
+            <>
+              <Player onheight={setStageHeight} />
+              <Panel api={(api) => (panel = api)} />
+            </>
           }
         >
-          <div class="kicked">
-            <h2 class="kicked-title">Room not found</h2>
-            <p class="kicked-note">
-              There's no room {notFound.code}. It may have expired, or the code is mistyped.
-            </p>
-            <button class="btn primary large" type="button" onClick={() => session.createNewRoom()}>
-              New room
-            </button>
-          </div>
-        </Show>
+          <Match when={notFoundCode()}>
+            <div class="kicked">
+              <h2 class="kicked-title">Room not found</h2>
+              <p class="kicked-note">
+                There's no room {notFoundCode()}. It may have expired, or the code is mistyped.
+              </p>
+              <button class="btn primary large" type="button" onClick={() => session.createNewRoom()}>
+                New room
+              </button>
+            </div>
+          </Match>
+          <Match when={view.kicked}>
+            <div class="kicked">
+              <h2 class="kicked-title">You left the room</h2>
+              <p class="kicked-note">The video stopped so this device can sleep.</p>
+              <button class="btn primary large" type="button" onClick={() => session.rejoin()}>
+                Rejoin
+              </button>
+            </div>
+          </Match>
+        </Switch>
       </main>
     </div>
   )

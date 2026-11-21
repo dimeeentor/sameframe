@@ -2,7 +2,21 @@
   position: fixed;
   z-index: 50;
   inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  color: inherit;
+  background: transparent;
   pointer-events: none;
+}
+
+.sheet-root::backdrop {
+  background: transparent;
 }
 
 .sheet-root.open {
@@ -166,23 +180,6 @@
   font-size: 34px;
   font-weight: 500;
   letter-spacing: 0.16em;
-}
-
-.sheet-root {
-  width: auto;
-  height: auto;
-  max-width: none;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  overflow: visible;
-  border: 0;
-  color: inherit;
-  background: transparent;
-}
-
-.sheet-root::backdrop {
-  background: transparent;
 }
 
 .viewers {

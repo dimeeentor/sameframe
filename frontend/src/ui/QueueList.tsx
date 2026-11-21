@@ -8,7 +8,7 @@ import { collapse, fade, rise } from "./motion"
 export default function QueueList() {
   const [holding, setHolding] = createSignal(false)
   // the list fades out after a clear, so keep showing the rows it had
-  const rows = createMemo<readonly VideoId[]>((prev) => (view.queue.length ? view.queue : (prev ?? [])))
+  const rows = createMemo<readonly VideoId[]>((prev) => (view.queue.length ? [...view.queue] : (prev ?? [])))
 
   const release = () => setHolding(false)
 

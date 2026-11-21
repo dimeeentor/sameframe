@@ -1,4 +1,4 @@
-import { createMemo, For, Show } from "solid-js"
+import { createMemo, For, Match, Show, Switch } from "solid-js"
 import { contrast, css, oklchToRgb, rgbToOklch, type Rgb } from "../state/color"
 import { saveCustom, setSettings, settings, theme, type CustomPalette } from "../state/settings"
 import Icon from "./Icon"
@@ -46,23 +46,23 @@ function moveHue(c: CustomPalette, h: number) {
 }
 
 export default function CustomTheme() {
-  const c = settings.custom
+  const c = () => settings.custom
   const dark = () => theme() === "dark"
-  const exact = () => c.exact[theme()]
+  const exact = () => c().exact[theme()]
 
-  const step = () => (exact().accent ? undefined : STEPS.find((s) => s.c === c.chroma))
-  const tintOf = (p: (typeof PAGES)[number]) => p.tint ?? c.hue
-  const isPage = (p: (typeof PAGES)[number]) => !exact().page && c.tint === tintOf(p) && c.k === p.k
+  const step = () => (exact().accent ? undefined : STEPS.find((s) => s.c === c().chroma))
+  const tintOf = (p: (typeof PAGES)[number]) => p.tint ?? c().hue
+  const isPage = (p: (typeof PAGES)[number]) => !exact().page && c().tint === tintOf(p) && c().k === p.k
 
   /** What the theme paints right now: the exact colour, or the derived one. */
   const accent = createMemo<Rgb>(
-    () => exact().accent ?? (dark() ? oklchToRgb(0.74, c.chroma * 0.825, c.hue) : oklchToRgb(0.54, c.chroma, c.hue)),
+    () => exact().accent ?? (dark() ? oklchToRgb(0.74, c().chroma * 0.825, c().hue) : oklchToRgb(0.54, c().chroma, c().hue)),
   )
   const page = createMemo<Rgb>(
-    () => exact().page ?? (dark() ? oklchToRgb(0.161, 0.009 * c.k, c.tint) : oklchToRgb(0.961, 0.013 * c.k, c.tint)),
+    () => exact().page ?? (dark() ? oklchToRgb(0.161, 0.009 * c().k, c().tint) : oklchToRgb(0.961, 0.013 * c().k, c().tint)),
   )
   /** Body text on the page, same formula as --ink. */
-  const ink = () => (dark() ? oklchToRgb(0.96, 0.008 * c.k, c.tint) : oklchToRgb(0.2, 0.008 * c.k, c.tint))
+  const ink = () => (dark() ? oklchToRgb(0.96, 0.008 * c().k, c().tint) : oklchToRgb(0.2, 0.008 * c().k, c().tint))
   const textContrast = createMemo(() => contrast(page(), ink()))
   /** Accent marks (progress, focus, links) need 3:1 against the page. */
   const accentContrast = createMemo(() => contrast(accent(), page()))
@@ -133,7 +133,7 @@ export default function CustomTheme() {
           class="hue-range"
           min="0"
           max="360"
-          value={c.hue}
+          value={c().hue}
           onInput={setHue}
           onChange={saveCustom}
         />
@@ -216,22 +216,20 @@ export default function CustomTheme() {
             }}
           </For>
 
-          <Show
-            when={textContrast() < 4.5}
-            fallback={
-              <Show when={accentContrast() < 3}>
-                <p class="custom-warn">
-                  The accent is hard to see on this page ({accentContrast().toFixed(1)}:1). Try a{" "}
-                  {dark() ? "lighter" : "darker"} accent.
-                </p>
-              </Show>
-            }
-          >
-            <p class="custom-warn">
-              Text on this page is hard to read ({textContrast().toFixed(1)}:1). Try a {dark() ? "darker" : "lighter"}{" "}
-              page.
-            </p>
-          </Show>
+          <Switch>
+            <Match when={textContrast() < 4.5}>
+              <p class="custom-warn">
+                Text on this page is hard to read ({textContrast().toFixed(1)}:1). Try a {dark() ? "darker" : "lighter"}{" "}
+                page.
+              </p>
+            </Match>
+            <Match when={accentContrast() < 3}>
+              <p class="custom-warn">
+                The accent is hard to see on this page ({accentContrast().toFixed(1)}:1). Try a{" "}
+                {dark() ? "lighter" : "darker"} accent.
+              </p>
+            </Match>
+          </Switch>
 
           <div class="custom-exact-foot">
             <p>Sets {theme()} mode only. Switch modes to set the other separately.</p>
