@@ -8,7 +8,7 @@
     "dev:fe": "pnpm --filter sameframe-frontend run dev",
     "build": "pnpm run build:fe",
     "dev": "pnpm run build:fe && wrangler dev",
-    "check": "tsrs --noEmit",
+    "check": "vp check",
     "deploy": "pnpm run build && wrangler deploy"
   },
   "dependencies": {
@@ -16,8 +16,6 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261119.1",
-    "tsrs": "7.1.0-beta.tsrs2",
-    "typescript": "^7.0.2",
     "vite-plus": "catalog:",
     "wrangler": "^4.165.0"
   }
